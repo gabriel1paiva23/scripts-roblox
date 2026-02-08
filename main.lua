@@ -1,5 +1,5 @@
 --==============================================================================
--- BLADE BALL ULTIMATE HUB v5.0 - CORRIGIDO
+-- BLADE BALL ULTIMATE HUB v5.0 - CORRIGIDa
 -- Interface e Sistema Completamente Otimizados
 --==============================================================================
 
