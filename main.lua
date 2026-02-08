@@ -640,7 +640,7 @@ function ServerHop:Execute()
 end
 
 --==============================================================================
--- INTERFACE COMPLETA COM LAYOUT CORRIGIDO
+-- INTERFACE COMPLETA
 --==============================================================================
 
 function CreateUI()
@@ -705,8 +705,8 @@ function CreateUI()
     -- 2. MENU PRINCIPAL
     local menu = Instance.new("Frame")
     menu.Name = "MainMenu"
-    menu.Size = UDim2.new(0, 600, 0, 550) -- Aumentado para mais espaço
-    menu.Position = UDim2.new(0.5, -300, 0.5, -275)
+    menu.Size = UDim2.new(0, 550, 0, 500)
+    menu.Position = UDim2.new(0.5, -275, 0.5, -250)
     menu.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     menu.BackgroundTransparency = 0.05
     menu.BorderSizePixel = 0
@@ -765,10 +765,10 @@ function CreateUI()
     
     closeBtn.Parent = titleBar
     
-    -- Container de abas (esquerda)
+    -- Container de abas
     local tabsContainer = Instance.new("Frame")
     tabsContainer.Name = "TabsContainer"
-    tabsContainer.Size = UDim2.new(0, 150, 1, -50)
+    tabsContainer.Size = UDim2.new(0, 130, 1, -50)
     tabsContainer.Position = UDim2.new(0, 0, 0, 40)
     tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
     tabsContainer.BorderSizePixel = 0
@@ -778,45 +778,36 @@ function CreateUI()
     tabCorner.CornerRadius = UDim.new(0, 10)
     tabCorner.Parent = tabsContainer
     
-    -- Container de conteúdo (direita)
+    -- Container de conteúdo
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -150, 1, -50)
-    contentContainer.Position = UDim2.new(0, 150, 0, 40)
+    contentContainer.Size = UDim2.new(1, -130, 1, -50)
+    contentContainer.Position = UDim2.new(0, 130, 0, 40)
     contentContainer.BackgroundTransparency = 1
     contentContainer.Parent = menu
     
-    -- Conteúdo rolável com padding adequado
+    -- Conteúdo rolável
     local contentFrame = Instance.new("ScrollingFrame")
     contentFrame.Name = "ContentFrame"
-    contentFrame.Size = UDim2.new(1, -20, 1, -20)
-    contentFrame.Position = UDim2.new(0, 10, 0, 10)
+    contentFrame.Size = UDim2.new(1, -10, 1, -10)
+    contentFrame.Position = UDim2.new(0, 5, 0, 5)
     contentFrame.BackgroundTransparency = 1
     contentFrame.ScrollBarThickness = 6
     contentFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
     contentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
     contentFrame.Parent = contentContainer
     
-    -- Layout organizado verticalmente
     local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, 10) -- Espaço entre os itens
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Padding = UDim.new(0, 8)
     listLayout.Parent = contentFrame
     
-    local padding = Instance.new("UIPadding")
-    padding.PaddingTop = UDim.new(0, 5)
-    padding.PaddingBottom = UDim.new(0, 5)
-    padding.Parent = contentFrame
-    
-    -- Função para criar toggle com layout correto
+    -- Função para criar toggle
     local function CreateToggle(name, configCategory, configKey, defaultValue)
         local toggleFrame = Instance.new("Frame")
-        toggleFrame.Name = name .. "Toggle"
-        toggleFrame.Size = UDim2.new(1, 0, 0, 35)
+        toggleFrame.Size = UDim2.new(1, 0, 0, 30)
         toggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
         toggleFrame.BackgroundTransparency = 0.1
         toggleFrame.BorderSizePixel = 0
-        toggleFrame.LayoutOrder = #contentFrame:GetChildren() + 1
         
         local toggleCorner = Instance.new("UICorner")
         toggleCorner.CornerRadius = UDim.new(0, 8)
@@ -834,7 +825,6 @@ function CreateUI()
         toggleLabel.Parent = toggleFrame
         
         local toggleButton = Instance.new("TextButton")
-        toggleButton.Name = "ToggleButton"
         toggleButton.Text = Config[configCategory][configKey] and "ON" or "OFF"
         toggleButton.Size = UDim2.new(0, 60, 0, 25)
         toggleButton.Position = UDim2.new(1, -70, 0.5, -12.5)
@@ -859,7 +849,7 @@ function CreateUI()
                 else
                     AutoClicker:Stop()
                 end
-            elseif configKey == "Enabled" and configCategory == "ESP" then
+            elseif configKey == "ESP" then
                 if Config[configCategory][configKey] then
                     for _, player in pairs(Players:GetPlayers()) do
                         if player ~= Player then
@@ -880,15 +870,13 @@ function CreateUI()
         return toggleFrame
     end
     
-    -- Função para criar slider com layout correto
+    -- Função para criar slider
     local function CreateSlider(name, configCategory, configKey, minValue, maxValue, defaultValue)
         local sliderFrame = Instance.new("Frame")
-        sliderFrame.Name = name .. "Slider"
-        sliderFrame.Size = UDim2.new(1, 0, 0, 60)
+        sliderFrame.Size = UDim2.new(1, 0, 0, 50)
         sliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
         sliderFrame.BackgroundTransparency = 0.1
         sliderFrame.BorderSizePixel = 0
-        sliderFrame.LayoutOrder = #contentFrame:GetChildren() + 1
         
         local sliderCorner = Instance.new("UICorner")
         sliderCorner.CornerRadius = UDim.new(0, 8)
@@ -896,7 +884,7 @@ function CreateUI()
         
         local sliderLabel = Instance.new("TextLabel")
         sliderLabel.Text = name .. ": " .. Config[configCategory][configKey]
-        sliderLabel.Size = UDim2.new(1, -10, 0, 25)
+        sliderLabel.Size = UDim2.new(1, -10, 0, 20)
         sliderLabel.Position = UDim2.new(0, 10, 0, 5)
         sliderLabel.BackgroundTransparency = 1
         sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -907,7 +895,7 @@ function CreateUI()
         
         local slider = Instance.new("Frame")
         slider.Size = UDim2.new(1, -20, 0, 5)
-        slider.Position = UDim2.new(0, 10, 1, -25)
+        slider.Position = UDim2.new(0, 10, 1, -20)
         slider.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
         slider.BorderSizePixel = 0
         
@@ -975,121 +963,67 @@ function CreateUI()
         return sliderFrame
     end
     
-    -- Função para criar botão
-    local function CreateButton(name, callback)
-        local buttonFrame = Instance.new("TextButton")
-        buttonFrame.Name = name .. "Button"
-        buttonFrame.Text = name
-        buttonFrame.Size = UDim2.new(1, 0, 0, 40)
-        buttonFrame.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-        buttonFrame.TextColor3 = Color3.fromRGB(255, 255, 255)
-        buttonFrame.Font = Enum.Font.GothamBold
-        buttonFrame.TextSize = 14
-        buttonFrame.LayoutOrder = #contentFrame:GetChildren() + 1
-        
-        local buttonCorner = Instance.new("UICorner")
-        buttonCorner.CornerRadius = UDim.new(0, 8)
-        buttonCorner.Parent = buttonFrame
-        
-        buttonFrame.MouseButton1Click:Connect(callback)
-        
-        return buttonFrame
-    end
-    
     -- Criar abas e conteúdo
     local tabs = {
         {Name = "Aimbot", Icon = "🎯", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- Aimbot Toggle
             local aimbotToggle = CreateToggle("Aimbot", "Aimbot", "Enabled", false)
             aimbotToggle.Parent = contentFrame
             
-            -- Auto Shoot Toggle
             local autoShootToggle = CreateToggle("Auto Shoot", "Aimbot", "AutoShoot", false)
             autoShootToggle.Parent = contentFrame
             
-            -- Team Check Toggle
             local teamCheckToggle = CreateToggle("Team Check", "Aimbot", "TeamCheck", true)
             teamCheckToggle.Parent = contentFrame
             
-            -- Visible Check Toggle
             local visibleCheckToggle = CreateToggle("Visible Check", "Aimbot", "VisibleCheck", true)
             visibleCheckToggle.Parent = contentFrame
             
-            -- FOV Slider
             local fovSlider = CreateSlider("FOV", "Aimbot", "FOV", 10, 500, 100)
             fovSlider.Parent = contentFrame
             
-            -- Smoothness Slider
             local smoothnessSlider = CreateSlider("Smoothness", "Aimbot", "Smoothness", 0, 1, 0.2)
             smoothnessSlider.Parent = contentFrame
-            
-            -- Prediction Slider
-            local predictionSlider = CreateSlider("Prediction", "Aimbot", "Prediction", 0, 1, 0.1)
-            predictionSlider.Parent = contentFrame
         end},
         
         {Name = "AutoParry", Icon = "🛡️", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- Auto Parry Toggle
             local autoParryToggle = CreateToggle("Auto Parry", "AutoParry", "Enabled", false)
             autoParryToggle.Parent = contentFrame
             
-            -- Auto Click Toggle
             local autoClickToggle = CreateToggle("Auto Click", "AutoParry", "AutoClick", true)
             autoClickToggle.Parent = contentFrame
             
-            -- Visual Alert Toggle
             local visualAlertToggle = CreateToggle("Visual Alert", "AutoParry", "VisualAlert", true)
             visualAlertToggle.Parent = contentFrame
             
-            -- Sound Alert Toggle
-            local soundAlertToggle = CreateToggle("Sound Alert", "AutoParry", "SoundAlert", true)
-            soundAlertToggle.Parent = contentFrame
-            
-            -- Parry Delay Slider
             local parryDelaySlider = CreateSlider("Parry Delay", "AutoParry", "ParryDelay", 0, 1, 0.1)
             parryDelaySlider.Parent = contentFrame
-            
-            -- Prediction Slider
-            local predictionSlider = CreateSlider("Prediction", "AutoParry", "Prediction", 0, 1, 0.2)
-            predictionSlider.Parent = contentFrame
         end},
         
         {Name = "ESP", Icon = "👁️", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- ESP Toggle
             local espToggle = CreateToggle("ESP", "ESP", "Enabled", false)
             espToggle.Parent = contentFrame
             
-            -- Box ESP Toggle
             local boxToggle = CreateToggle("Box ESP", "ESP", "Boxes", true)
             boxToggle.Parent = contentFrame
             
-            -- Tracers Toggle
             local tracerToggle = CreateToggle("Tracers", "ESP", "Tracers", true)
             tracerToggle.Parent = contentFrame
             
-            -- Names Toggle
             local nameToggle = CreateToggle("Names", "ESP", "Names", true)
             nameToggle.Parent = contentFrame
             
-            -- Distance Toggle
             local distanceToggle = CreateToggle("Distance", "ESP", "Distance", true)
             distanceToggle.Parent = contentFrame
             
-            -- Health Toggle
             local healthToggle = CreateToggle("Health", "ESP", "Health", true)
             healthToggle.Parent = contentFrame
             
-            -- Team Color Toggle
-            local teamColorToggle = CreateToggle("Team Color", "ESP", "TeamColor", true)
-            teamColorToggle.Parent = contentFrame
-            
-            -- Max Distance Slider
             local maxDistanceSlider = CreateSlider("Max Distance", "ESP", "MaxDistance", 100, 5000, 1000)
             maxDistanceSlider.Parent = contentFrame
         end},
@@ -1097,39 +1031,30 @@ function CreateUI()
         {Name = "Movement", Icon = "🚀", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- Speed Hack Toggle
             local speedToggle = CreateToggle("Speed Hack", "Movement", "Speed", false)
             speedToggle.Parent = contentFrame
             
-            -- Speed Value Slider
             local speedSlider = CreateSlider("Speed Value", "Movement", "SpeedValue", 16, 200, 30)
             speedSlider.Parent = contentFrame
             
-            -- Fly Toggle
             local flyToggle = CreateToggle("Fly", "Movement", "Fly", false)
             flyToggle.Parent = contentFrame
             
-            -- Fly Speed Slider
             local flySpeedSlider = CreateSlider("Fly Speed", "Movement", "FlySpeed", 10, 200, 40)
             flySpeedSlider.Parent = contentFrame
             
-            -- Jump Power Toggle
             local jumpToggle = CreateToggle("Jump Power", "Movement", "JumpPower", false)
             jumpToggle.Parent = contentFrame
             
-            -- Jump Value Slider
             local jumpSlider = CreateSlider("Jump Value", "Movement", "JumpValue", 50, 500, 60)
             jumpSlider.Parent = contentFrame
             
-            -- Noclip Toggle
             local noclipToggle = CreateToggle("Noclip", "Movement", "Noclip", false)
             noclipToggle.Parent = contentFrame
             
-            -- Bunny Hop Toggle
             local bhopToggle = CreateToggle("Bunny Hop", "Movement", "Bhop", false)
             bhopToggle.Parent = contentFrame
             
-            -- Infinite Jump Toggle
             local infJumpToggle = CreateToggle("Infinite Jump", "Movement", "InfJump", false)
             infJumpToggle.Parent = contentFrame
         end},
@@ -1137,27 +1062,21 @@ function CreateUI()
         {Name = "Visuals", Icon = "🎨", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- FOV Changer Toggle
             local fovToggle = CreateToggle("FOV Changer", "Visuals", "FOVChanger", false)
             fovToggle.Parent = contentFrame
             
-            -- FOV Value Slider
             local fovSlider = CreateSlider("FOV Value", "Visuals", "FOVValue", 70, 120, 100)
             fovSlider.Parent = contentFrame
             
-            -- FullBright Toggle
             local fullbrightToggle = CreateToggle("FullBright", "Visuals", "FullBright", false)
             fullbrightToggle.Parent = contentFrame
             
-            -- No Shadows Toggle
             local noShadowsToggle = CreateToggle("No Shadows", "Visuals", "NoShadows", false)
             noShadowsToggle.Parent = contentFrame
             
-            -- Rainbow Character Toggle
             local rainbowCharToggle = CreateToggle("Rainbow Character", "Misc", "RainbowCharacter", false)
             rainbowCharToggle.Parent = contentFrame
             
-            -- Spin Bot Toggle
             local spinbotToggle = CreateToggle("Spin Bot", "Misc", "SpinBot", false)
             spinbotToggle.Parent = contentFrame
         end},
@@ -1165,32 +1084,42 @@ function CreateUI()
         {Name = "Misc", Icon = "⚙️", Content = function()
             contentFrame:ClearAllChildren()
             
-            -- Anti-AFK Toggle
             local antiAfkToggle = CreateToggle("Anti-AFK", "Misc", "AntiAfk", true)
             antiAfkToggle.Parent = contentFrame
             
-            -- Auto Clicker Toggle
             local autoClickerToggle = CreateToggle("Auto Clicker", "Misc", "AutoClicker", false)
             autoClickerToggle.Parent = contentFrame
             
-            -- Click Speed Slider
             local clickSpeedSlider = CreateSlider("Click Speed", "Misc", "ClickSpeed", 1, 100, 10)
             clickSpeedSlider.Parent = contentFrame
             
-            -- Anti Void Toggle
             local antiVoidToggle = CreateToggle("Anti Void", "Misc", "AntiVoid", false)
             antiVoidToggle.Parent = contentFrame
             
-            -- Server Hop Button
-            local serverHopBtn = CreateButton("🔄 Server Hop Agora", function()
+            -- Botão para servidor hop
+            local serverHopBtn = Instance.new("TextButton")
+            serverHopBtn.Text = "🔄 Server Hop Agora"
+            serverHopBtn.Size = UDim2.new(1, -10, 0, 35)
+            serverHopBtn.Position = UDim2.new(0, 5, 0, 5)
+            serverHopBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+            serverHopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            serverHopBtn.Font = Enum.Font.GothamBold
+            serverHopBtn.TextSize = 14
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 8)
+            btnCorner.Parent = serverHopBtn
+            
+            serverHopBtn.MouseButton1Click:Connect(function()
                 ServerHop:Execute()
                 ShowNotification("Server Hop", "Trocando de servidor...", 3)
             end)
+            
             serverHopBtn.Parent = contentFrame
         end}
     }
     
-    -- Criar botões de abas (VERTICAL)
+    -- Criar botões de abas
     for i, tab in ipairs(tabs) do
         local tabButton = Instance.new("TextButton")
         tabButton.Name = tab.Name .. "Tab"
@@ -1201,7 +1130,6 @@ function CreateUI()
         tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         tabButton.Font = Enum.Font.Gotham
         tabButton.TextSize = 13
-        tabButton.TextXAlignment = Enum.TextXAlignment.Left
         
         local buttonCorner = Instance.new("UICorner")
         buttonCorner.CornerRadius = UDim.new(0, 8)
@@ -1366,7 +1294,7 @@ Player.Chatted:Connect(function(message)
             ";speed - Toggle Speed\n" ..
             ";help - Esta mensagem", 5)
     end
-end
+end)
 
 --==============================================================================
 -- SISTEMA DE TECLAS
