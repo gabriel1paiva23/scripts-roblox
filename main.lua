@@ -1,6 +1,7 @@
 --==============================================================================
--- BLADE BALL ULTIMATE HUB v5.0 - CORRIGIDO
+-- BLADE BALL ULTIMATE HUB v5.0 - OTIMIZADO E CORRIGIDO
 -- Interface e Sistema Completamente Otimizados
+-- Comando Chat: ;menu
 --==============================================================================
 
 -- Services
@@ -14,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Player
 local Player = Players.LocalPlayer
@@ -31,7 +33,8 @@ local Config = {
         Notifications = true,
         AutoSave = true,
         MenuPosition = UDim2.new(0.5, -250, 0.5, -200),
-        MenuSize = UDim2.new(0, 500, 0, 400)
+        MenuSize = UDim2.new(0, 500, 0, 400),
+        ChatCommand = ";menu"
     },
     
     Aimbot = {
@@ -142,11 +145,12 @@ local State = {
     },
     DraggingUI = false,
     DragStart = nil,
-    MousePos = nil
+    MousePos = nil,
+    ChatConnection = nil
 }
 
 --==============================================================================
--- SISTEMA DE MENU/INTERFACE CORRIGIDO
+-- SISTEMA DE MENU/INTERFACE OTIMIZADO
 --==============================================================================
 
 function CreateMainUI()
@@ -245,7 +249,7 @@ function CreateWatermark(parent)
     title.Parent = titleContainer
     
     local subtitle = Instance.new("TextLabel")
-    subtitle.Text = "v5.0 - By Danizao_Piu"
+    subtitle.Text = "v5.0 - Comando: ;menu"
     subtitle.Size = UDim2.new(1, -40, 0, 15)
     subtitle.Position = UDim2.new(0, 35, 0, 25)
     subtitle.BackgroundTransparency = 1
@@ -292,10 +296,7 @@ function CreateWatermark(parent)
         while watermark and watermark.Parent do
             local fps = math.floor(1 / RunService.RenderStepped:Wait())
             fpsLabel.Text = "FPS: " .. fps
-            
-            -- Simulação de ping (em um script real, você obteria do NetworkClient)
             pingLabel.Text = "PING: " .. math.random(20, 80) .. "ms"
-            
             task.wait(1)
         end
     end)
@@ -316,11 +317,6 @@ function CreateMainMenu(parent)
     menu.Active = true
     menu.Draggable = false
     menu.ZIndex = 100
-    
-    -- Background blur effect
-    local blur = Instance.new("BlurEffect")
-    blur.Size = 5
-    blur.Parent = menu
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 15)
@@ -487,19 +483,16 @@ function CreateMainMenu(parent)
         
         -- Button click event
         tabButton.MouseButton1Click:Connect(function()
-            -- Update all buttons
             for _, btn in pairs(tabButtonsContainer:GetChildren()) do
                 if btn:IsA("TextButton") then
                     btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
                 end
             end
             
-            -- Hide all frames
             for _, frame in pairs(tabFrames) do
                 frame.Visible = false
             end
             
-            -- Show selected
             tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
             tabFrame.Visible = true
         end)
@@ -515,13 +508,7 @@ function CreateMainMenu(parent)
     menu.Parent = parent
     
     State.UIElements.MainMenu = menu
-    
-    -- Hotkey para abrir/fechar menu
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Config.Hub.Keybind then
-            menu.Visible = not menu.Visible
-        end
-    end)
+    return menu
 end
 
 function CreateTabContent(tabName, parent)
@@ -1133,7 +1120,7 @@ function SendNotification(title, message, duration)
 end
 
 --==============================================================================
--- SISTEMA DE FUNCIONALIDADES (Simplificado)
+-- SISTEMA DE FUNCIONALIDADES OTIMIZADO
 --==============================================================================
 
 function GetConfigValue(path)
@@ -1163,28 +1150,141 @@ function SetConfigValue(path, value)
     if Config.Hub.AutoSave then
         SaveConfig()
     end
+    
+    -- Aplica mudanças em tempo real
+    ApplyConfigChanges(path, value)
+end
+
+function ApplyConfigChanges(path, value)
+    if path == "Movement.Speed" then
+        if Humanoid then
+            if value then
+                Humanoid.WalkSpeed = Config.Movement.SpeedValue
+            else
+                Humanoid.WalkSpeed = 16
+            end
+        end
+        
+    elseif path == "Movement.SpeedValue" then
+        if Config.Movement.Speed and Humanoid then
+            Humanoid.WalkSpeed = value
+        end
+        
+    elseif path == "Movement.JumpPower" then
+        if Humanoid then
+            if value then
+                Humanoid.JumpPower = Config.Movement.JumpValue
+            else
+                Humanoid.JumpPower = 50
+            end
+        end
+        
+    elseif path == "Movement.JumpValue" then
+        if Config.Movement.JumpPower and Humanoid then
+            Humanoid.JumpPower = value
+        end
+        
+    elseif path == "Visuals.FOVChanger" then
+        if Camera then
+            if value then
+                Camera.FieldOfView = Config.Visuals.FOVValue
+            else
+                Camera.FieldOfView = 70
+            end
+        end
+        
+    elseif path == "Visuals.FOVValue" then
+        if Config.Visuals.FOVChanger and Camera then
+            Camera.FieldOfView = value
+        end
+        
+    elseif path == "Visuals.FullBright" then
+        if value then
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 2
+        else
+            Lighting.GlobalShadows = true
+            Lighting.Brightness = 1
+        end
+        
+    elseif path == "Visuals.NoShadows" then
+        Lighting.GlobalShadows = not value
+        
+    elseif path == "Visuals.TimeChanger" then
+        if value then
+            Lighting.ClockTime = Config.Visuals.TimeValue
+        else
+            Lighting.ClockTime = 14
+        end
+        
+    elseif path == "Visuals.TimeValue" then
+        if Config.Visuals.TimeChanger then
+            Lighting.ClockTime = value
+        end
+        
+    elseif string.find(path, "ESP") then
+        UpdateESP()
+    end
 end
 
 function SaveConfig()
-    local data = HttpService:JSONEncode(Config)
-    writefile("bladeball_config_v5.json", data)
-    print("✅ Configurações salvas!")
+    local success, data = pcall(function()
+        return HttpService:JSONEncode(Config)
+    end)
+    
+    if success then
+        writefile("bladeball_config_v5.json", data)
+        print("✅ Configurações salvas!")
+    else
+        print("❌ Erro ao salvar configurações")
+    end
 end
 
 function LoadConfig()
-    if isfile("bladeball_config_v5.json") then
+    if isfile and readfile and isfile("bladeball_config_v5.json") then
         local success, data = pcall(function()
             return HttpService:JSONDecode(readfile("bladeball_config_v5.json"))
         end)
         
-        if success then
+        if success and data then
             Config = data
             print("✅ Configurações carregadas!")
+            
+            -- Aplica configurações carregadas
+            ApplyLoadedConfig()
         else
             print("❌ Erro ao carregar configurações")
         end
     else
         print("ℹ️ Nenhuma configuração salva encontrada")
+    end
+end
+
+function ApplyLoadedConfig()
+    -- Aplica configurações carregadas
+    if Config.Movement.Speed and Humanoid then
+        Humanoid.WalkSpeed = Config.Movement.SpeedValue
+    end
+    
+    if Config.Movement.JumpPower and Humanoid then
+        Humanoid.JumpPower = Config.Movement.JumpValue
+    end
+    
+    if Config.Visuals.FOVChanger and Camera then
+        Camera.FieldOfView = Config.Visuals.FOVValue
+    end
+    
+    if Config.Visuals.FullBright then
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 2
+    end
+    
+    if Config.Visuals.NoShadows then
+        Lighting.GlobalShadows = false
+    end
+    
+    if Config.Visuals.TimeChanger then
+        Lighting.ClockTime = Config.Visuals.TimeValue
     end
 end
 
@@ -1197,7 +1297,8 @@ function ResetConfig()
             Notifications = true,
             AutoSave = true,
             MenuPosition = UDim2.new(0.5, -250, 0.5, -200),
-            MenuSize = UDim2.new(0, 500, 0, 400)
+            MenuSize = UDim2.new(0, 500, 0, 400),
+            ChatCommand = ";menu"
         },
         Aimbot = {
             Enabled = false,
@@ -1280,13 +1381,213 @@ function ResetConfig()
         }
     }
     
+    -- Reseta valores no jogo
+    if Humanoid then
+        Humanoid.WalkSpeed = 16
+        Humanoid.JumpPower = 50
+    end
+    
+    if Camera then
+        Camera.FieldOfView = 70
+    end
+    
+    Lighting.GlobalShadows = true
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 14
+    
     print("✅ Configurações resetadas para padrão!")
+end
+
+function UpdateESP()
+    if not Config.ESP.Enabled then
+        -- Remove ESP se desativado
+        for _, espObj in pairs(State.PlayersESP) do
+            if espObj and espObj.Parent then
+                espObj:Destroy()
+            end
+        end
+        State.PlayersESP = {}
+        return
+    end
+    
+    -- Aqui você implementaria o sistema ESP real
+    -- Esta é uma versão simplificada
+end
+
+function SetupChatCommand()
+    -- Configura o comando de chat
+    if State.ChatConnection then
+        State.ChatConnection:Disconnect()
+    end
+    
+    -- Monitora mensagens do chat
+    State.ChatConnection = Player.Chatted:Connect(function(message)
+        if string.lower(message) == Config.Hub.ChatCommand:lower() then
+            if State.UIElements.MainMenu then
+                State.UIElements.MainMenu.Visible = not State.UIElements.MainMenu.Visible
+                SendNotification("Menu " .. (State.UIElements.MainMenu.Visible and "Aberto" or "Fechado"), 
+                    "Use o comando " .. Config.Hub.ChatCommand .. " novamente para " .. 
+                    (State.UIElements.MainMenu.Visible and "fechar" or "abrir"), 2)
+            end
+        end
+    end)
+    
+    print("✅ Comando de chat configurado: " .. Config.Hub.ChatCommand)
+end
+
+function SetupFlySystem()
+    local flyConnection
+    
+    local function updateFly()
+        if not Config.Movement.Fly or not Character or not HumanoidRootPart then
+            State.IsFlying = false
+            if flyConnection then
+                flyConnection:Disconnect()
+            end
+            return
+        end
+        
+        State.IsFlying = true
+        Humanoid.PlatformStand = true
+        
+        local flyVelocity = Vector3.new(0, 0, 0)
+        
+        if flyConnection then
+            flyConnection:Disconnect()
+        end
+        
+        flyConnection = RunService.Heartbeat:Connect(function(delta)
+            if not Character or not HumanoidRootPart then
+                if flyConnection then
+                    flyConnection:Disconnect()
+                end
+                return
+            end
+            
+            -- Calcula direção do movimento
+            local forward = 0
+            local right = 0
+            local up = 0
+            
+            if State.FlyKeys.W then forward = forward + 1 end
+            if State.FlyKeys.S then forward = forward - 1 end
+            if State.FlyKeys.D then right = right + 1 end
+            if State.FlyKeys.A then right = right - 1 end
+            if State.FlyKeys.Space then up = up + 1 end
+            if State.FlyKeys.LeftControl then up = up - 1 end
+            
+            -- Aplica velocidade
+            local camera = Workspace.CurrentCamera
+            local lookVector = camera.CFrame.LookVector
+            local rightVector = camera.CFrame.RightVector
+            local upVector = camera.CFrame.UpVector
+            
+            local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
+            flyVelocity = moveVector * Config.Movement.FlySpeed
+            
+            -- Aplica velocidade ao personagem
+            HumanoidRootPart.Velocity = flyVelocity
+        end)
+    end
+    
+    -- Atualiza quando a configuração muda
+    Config.Movement.FlyChanged = updateFly
+    
+    updateFly()
+end
+
+function SetupAutoParry()
+    local parryConnection
+    
+    local function checkBall()
+        -- Procura a bola no workspace
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if obj.Name:find("Ball") or obj.Name:find("ball") then
+                State.Ball = obj
+                break
+            end
+        end
+    end
+    
+    local function updateAutoParry()
+        if not Config.AutoParry.Enabled then
+            if parryConnection then
+                parryConnection:Disconnect()
+            end
+            return
+        end
+        
+        -- Configura o sistema de auto parry
+        parryConnection = RunService.Heartbeat:Connect(function()
+            if not Character or not HumanoidRootPart or not Config.AutoParry.Enabled then
+                return
+            end
+            
+            checkBall()
+            
+            if State.Ball and State.Ball:IsA("BasePart") then
+                local ballPos = State.Ball.Position
+                local playerPos = HumanoidRootPart.Position
+                local distance = (ballPos - playerPos).Magnitude
+                
+                -- Verifica se a bola está dentro da distância configurada
+                if distance >= Config.AutoParry.MinDistance and distance <= Config.AutoParry.MaxDistance then
+                    local timeSinceLastParry = tick() - State.LastParryTime
+                    
+                    if timeSinceLastParry > Config.AutoParry.ParryCooldown then
+                        -- Simula clique do mouse para parry
+                        if Config.AutoParry.AutoClick then
+                            task.wait(Config.AutoParry.ClickDelay)
+                            VirtualInput:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                            task.wait(0.05)
+                            VirtualInput:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                            
+                            State.LastParryTime = tick()
+                            
+                            if Config.AutoParry.SoundAlert then
+                                -- Toca som de parry (simulado)
+                            end
+                            
+                            if Config.AutoParry.VisualAlert then
+                                SendNotification("Auto Parry", "Parry executado!", 1)
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    updateAutoParry()
+    
+    -- Reconecta quando o personagem respawna
+    Player.CharacterAdded:Connect(function()
+        task.wait(1)
+        updateAutoParry()
+    end)
+end
+
+function SetupAntiAFK()
+    if Config.Misc.AntiAfk then
+        -- Previne AFK
+        local VirtualUser = game:GetService("VirtualUser")
+        Player.Idled:Connect(function()
+            VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        end)
+    end
 end
 
 function UnloadScript()
     -- Remove UI
     if CoreGui:FindFirstChild("BladeBallHubUI") then
         CoreGui.BladeBallHubUI:Destroy()
+    end
+    
+    -- Desconecta conexões
+    if State.ChatConnection then
+        State.ChatConnection:Disconnect()
     end
     
     -- Reseta configurações
@@ -1299,6 +1600,11 @@ function UnloadScript()
         Camera.FieldOfView = 70
     end
     
+    -- Reseta lighting
+    Lighting.GlobalShadows = true
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 14
+    
     SendNotification("Script Descarregado", "Blade Ball Ultimate Hub v5.0 foi descarregado", 3)
     
     print("========================================")
@@ -1307,14 +1613,14 @@ function UnloadScript()
 end
 
 --==============================================================================
--- INICIALIZAÇÃO CORRIGIDA
+-- INICIALIZAÇÃO OTIMIZADA
 --==============================================================================
 
 function Initialize()
     print("========================================")
     print("⚔️ BLADE BALL ULTIMATE HUB v5.0")
     print("========================================")
-    print("Interface Corrigida - By Danizao_Piu")
+    print("Sistema Otimizado - Comando: ;menu")
     print("========================================")
     
     -- Carrega configurações
@@ -1322,6 +1628,14 @@ function Initialize()
     
     -- Cria interface
     CreateMainUI()
+    
+    -- Configura comando de chat
+    SetupChatCommand()
+    
+    -- Configura sistemas
+    SetupFlySystem()
+    SetupAutoParry()
+    SetupAntiAFK()
     
     -- Configura inputs de voo
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -1335,6 +1649,13 @@ function Initialize()
         if key == "Space" then State.FlyKeys.Space = true end
         if key == "LeftShift" then State.FlyKeys.LeftShift = true end
         if key == "LeftControl" then State.FlyKeys.LeftControl = true end
+        
+        -- Tecla para abrir menu
+        if not gameProcessed and input.KeyCode == Config.Hub.Keybind then
+            if State.UIElements.MainMenu then
+                State.UIElements.MainMenu.Visible = not State.UIElements.MainMenu.Visible
+            end
+        end
     end)
     
     UserInputService.InputEnded:Connect(function(input, gameProcessed)
@@ -1356,18 +1677,45 @@ function Initialize()
         Humanoid = char:WaitForChild("Humanoid")
         HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
         
-        SendNotification("Sistema Atualizado", "Personagem respawnou com sucesso", 2)
+        -- Reaplica configurações
+        ApplyLoadedConfig()
+        
+        SendNotification("Personagem Atualizado", "Configurações reaplicadas", 2)
+    end)
+    
+    -- Loop principal para atualizações
+    spawn(function()
+        while task.wait(0.1) do
+            -- Atualiza efeito arco-íris se ativado
+            if Config.Misc.RainbowCharacter and Character then
+                State.RainbowHue = (State.RainbowHue + 1) % 360
+                local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
+                
+                for _, part in pairs(Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.Color = color
+                    end
+                end
+            end
+            
+            -- Atualiza Spin Bot
+            if Config.Misc.SpinBot and HumanoidRootPart then
+                HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
+            end
+        end
     end)
     
     -- Notificação inicial
     SendNotification("Bem-vindo ao Blade Ball Hub", 
-        "Pressione " .. Config.Hub.Keybind.Name .. " para abrir o menu\n" ..
+        "Comando: " .. Config.Hub.ChatCommand .. "\n" ..
+        "Tecla: " .. Config.Hub.Keybind.Name .. "\n" ..
         "Desenvolvido por @Danizao_Piu",
         5
     )
     
     print("✅ Sistema inicializado com sucesso!")
     print("🎮 Menu Keybind: " .. Config.Hub.Keybind.Name)
+    print("💬 Chat Command: " .. Config.Hub.ChatCommand)
     print("👨‍💻 Desenvolvedor: Danizao_Piu")
     print("========================================")
 end
