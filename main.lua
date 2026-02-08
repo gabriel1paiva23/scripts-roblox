@@ -16,6 +16,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local StarterGui = game:GetService("StarterGui")
 
 -- Player
 local Player = Players.LocalPlayer
@@ -141,6 +142,7 @@ local OriginalSettings = {
 }
 
 print("⚔️ BLADE BALL ULTIMATE HUB v6.0 UNIVERSAL INICIANDO...")
+print("📱 Aguarde a inicialização do sistema...")
 
 --==============================================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -595,6 +597,9 @@ function ESP:Remove(player)
 end
 
 function ESP:UpdateAll()
+    if not Config.ESP.Enabled then return end
+    if not State.ScreenGui or not State.ScreenGui.Parent then return end
+    
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= Player and IsAlive(player) then
             if not State.ESPObjects[player] then
@@ -804,6 +809,8 @@ end
 --==============================================================================
 
 function CreateUI()
+    print("🖥️ Criando interface do usuário...")
+    
     -- Remove UI antiga
     if CoreGui:FindFirstChild("BladeBallHubUI") then
         CoreGui.BladeBallHubUI:Destroy()
@@ -1387,14 +1394,16 @@ function CreateUI()
             tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
             
             -- Carregar conteúdo
-            tab.Content()
+            if tab.Content then
+                tab.Content()
+            end
         end)
         
         tabButton.Parent = tabsContainer
     end
     
     -- Carregar primeira aba
-    if #tabs > 0 then
+    if #tabs > 0 and tabs[1].Content then
         tabs[1].Content()
         tabsContainer:FindFirstChild(tabs[1].Name .. "Tab").BackgroundColor3 = Color3.fromRGB(80, 80, 120)
     end
@@ -1411,6 +1420,7 @@ function CreateUI()
     notifContainer.Parent = ScreenGui
     State.NotificationsContainer = notifContainer
     
+    print("✅ Interface criada com sucesso!")
     return ScreenGui
 end
 
@@ -1467,9 +1477,10 @@ function ShowNotification(title, message, duration)
     
     -- Animação de entrada
     notif.Position = UDim2.new(0, 5, 1, 5)
-    TweenService:Create(notif, TweenInfo.new(0.3), {
+    local tween = TweenService:Create(notif, TweenInfo.new(0.3), {
         Position = UDim2.new(0, 5, 1, -75)
-    }):Play()
+    })
+    tween:Play()
     
     -- Remove depois da duração
     task.spawn(function()
@@ -1487,32 +1498,47 @@ end
 -- SISTEMA DE CHAT
 --==============================================================================
 
-Player.Chatted:Connect(function(message)
-    local cleanMsg = string.lower(string.gsub(message, "%s+", ""))
+local function SetupChatSystem()
+    Player.Chatted:Connect(function(message)
+        local cleanMsg = string.lower(string.gsub(message, "%s+", ""))
+        
+        if cleanMsg == ";menu" then
+            ToggleMenu()
+        elseif cleanMsg == ";esp" then
+            Config.ESP.Enabled = not Config.ESP.Enabled
+            ShowNotification("ESP", Config.ESP.Enabled and "Ativado" or "Desativado", 2)
+        elseif cleanMsg == ";aimbot" then
+            Config.Aimbot.Enabled = not Config.Aimbot.Enabled
+            ShowNotification("Aimbot", Config.Aimbot.Enabled and "Ativado" or "Desativado", 2)
+        elseif cleanMsg == ";fly" then
+            Config.Movement.Fly = not Config.Movement.Fly
+            ShowNotification("Fly", Config.Movement.Fly and "Ativado" or "Desativado", 2)
+        elseif cleanMsg == ";speed" then
+            Config.Movement.Speed = not Config.Movement.Speed
+            ShowNotification("Speed", Config.Movement.Speed and "Ativado" or "Desativado", 2)
+        elseif cleanMsg == ";help" then
+            ShowNotification("Comandos disponíveis", 
+                ";menu - Abrir menu\n" ..
+                ";esp - Toggle ESP\n" ..
+                ";aimbot - Toggle Aimbot\n" ..
+                ";fly - Toggle Fly\n" ..
+                ";speed - Toggle Speed\n" ..
+                ";help - Esta mensagem", 5)
+        end
+    end)
     
-    if cleanMsg == ";menu" then
-        ToggleMenu()
-    elseif cleanMsg == ";esp" then
-        Config.ESP.Enabled = not Config.ESP.Enabled
-        ShowNotification("ESP", Config.ESP.Enabled and "Ativado" or "Desativado", 2)
-    elseif cleanMsg == ";aimbot" then
-        Config.Aimbot.Enabled = not Config.Aimbot.Enabled
-        ShowNotification("Aimbot", Config.Aimbot.Enabled and "Ativado" or "Desativado", 2)
-    elseif cleanMsg == ";fly" then
-        Config.Movement.Fly = not Config.Movement.Fly
-        ShowNotification("Fly", Config.Movement.Fly and "Ativado" or "Desativado", 2)
-    elseif cleanMsg == ";speed" then
-        Config.Movement.Speed = not Config.Movement.Speed
-        ShowNotification("Speed", Config.Movement.Speed and "Ativado" or "Desativado", 2)
-    end
-end)
+    print("✅ Sistema de chat configurado")
+end
 
 --==============================================================================
 -- FUNÇÃO PRINCIPAL - ALTERNAR MENU
 --==============================================================================
 
 function ToggleMenu()
+    print("🔄 Alternando menu...")
+    
     if not State.ScreenGui or not State.ScreenGui.Parent then
+        print("⚠️ Interface não encontrada, criando nova...")
         CreateUI()
     end
     
@@ -1520,8 +1546,12 @@ function ToggleMenu()
         State.MenuVisible = not State.MenuVisible
         State.MainMenu.Visible = State.MenuVisible
         
+        print("📊 Menu visível: " .. tostring(State.MenuVisible))
+        
         ShowNotification("Menu " .. (State.MenuVisible and "Aberto" or "Fechado"), 
             "Comando: ;menu", 2)
+    else
+        print("❌ MainMenu não encontrado!")
     end
 end
 
@@ -1529,203 +1559,211 @@ end
 -- SISTEMA DE TECLAS
 --==============================================================================
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        -- Teclas para abrir menu
-        if input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.M then
-            ToggleMenu()
-        end
-        
-        -- Controles de voo
-        local key = input.KeyCode.Name
-        if key == "W" then State.FlyKeys.W = true end
-        if key == "A" then State.FlyKeys.A = true end
-        if key == "S" then State.FlyKeys.S = true end
-        if key == "D" then State.FlyKeys.D = true end
-        if key == "Space" then State.FlyKeys.Space = true end
-        if key == "LeftControl" then State.FlyKeys.LeftControl = true end
-        
-        -- Trigger para aimbot
-        if Config.Aimbot.TriggerKey == key then
-            if Config.Aimbot.Enabled and not Config.Aimbot.HoldToAim then
-                Config.Aimbot.Enabled = false
-                task.wait(0.1)
-                Config.Aimbot.Enabled = true
+local function SetupKeybinds()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed then
+            -- Teclas para abrir menu
+            if input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.M then
+                print("🎮 TECLA " .. input.KeyCode.Name .. " PRESSIONADA - ABRINDO MENU")
+                ToggleMenu()
+            end
+            
+            -- Controles de voo
+            local key = input.KeyCode.Name
+            if key == "W" then State.FlyKeys.W = true end
+            if key == "A" then State.FlyKeys.A = true end
+            if key == "S" then State.FlyKeys.S = true end
+            if key == "D" then State.FlyKeys.D = true end
+            if key == "Space" then State.FlyKeys.Space = true end
+            if key == "LeftControl" then State.FlyKeys.LeftControl = true end
+            
+            -- Trigger para aimbot
+            if Config.Aimbot.TriggerKey == key then
+                if Config.Aimbot.Enabled and not Config.Aimbot.HoldToAim then
+                    Config.Aimbot.Enabled = false
+                    task.wait(0.1)
+                    Config.Aimbot.Enabled = true
+                end
             end
         end
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    local key = input.KeyCode.Name
-    if key == "W" then State.FlyKeys.W = false end
-    if key == "A" then State.FlyKeys.A = false end
-    if key == "S" then State.FlyKeys.S = false end
-    if key == "D" then State.FlyKeys.D = false end
-    if key == "Space" then State.FlyKeys.Space = false end
-    if key == "LeftControl" then State.FlyKeys.LeftControl = false end
-end)
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        local key = input.KeyCode.Name
+        if key == "W" then State.FlyKeys.W = false end
+        if key == "A" then State.FlyKeys.A = false end
+        if key == "S" then State.FlyKeys.S = false end
+        if key == "D" then State.FlyKeys.D = false end
+        if key == "Space" then State.FlyKeys.Space = false end
+        if key == "LeftControl" then State.FlyKeys.LeftControl = false end
+    end)
+    
+    print("✅ Teclas configuradas: RightShift/M para menu")
+end
 
 --==============================================================================
 -- LOOP PRINCIPAL
 --==============================================================================
 
-RunService.Heartbeat:Connect(function(deltaTime)
-    -- Aimbot
-    if Config.Aimbot.Enabled then
-        Aimbot:Update()
-    end
+local function MainLoop()
+    print("🔄 Iniciando loop principal...")
     
-    -- ESP
-    if Config.ESP.Enabled then
-        ESP:UpdateAll()
-    else
-        for player, _ in pairs(State.ESPObjects) do
-            ESP:Remove(player)
+    RunService.Heartbeat:Connect(function(deltaTime)
+        -- Aimbot
+        if Config.Aimbot.Enabled then
+            Aimbot:Update()
         end
-    end
-    
-    -- Auto Parry
-    if Config.AutoParry.Enabled then
-        AutoParry:CheckBall()
-    end
-    
-    -- Speed Hack
-    if Humanoid and Config.Movement.Speed then
-        Humanoid.WalkSpeed = Config.Movement.SpeedValue
-    elseif Humanoid then
-        Humanoid.WalkSpeed = OriginalSettings.WalkSpeed
-    end
-    
-    -- Jump Power
-    if Humanoid and Config.Movement.JumpPower then
-        Humanoid.JumpPower = Config.Movement.JumpValue
-    elseif Humanoid then
-        Humanoid.JumpPower = OriginalSettings.JumpPower
-    end
-    
-    -- Fly System
-    if Config.Movement.Fly and Character and HumanoidRootPart then
-        Humanoid.PlatformStand = true
         
-        local forward = 0
-        local right = 0
-        local up = 0
+        -- ESP
+        if Config.ESP.Enabled then
+            ESP:UpdateAll()
+        end
         
-        if State.FlyKeys.W then forward = forward + 1 end
-        if State.FlyKeys.S then forward = forward - 1 end
-        if State.FlyKeys.D then right = right + 1 end
-        if State.FlyKeys.A then right = right - 1 end
-        if State.FlyKeys.Space then up = up + 1 end
-        if State.FlyKeys.LeftControl then up = up - 1 end
+        -- Auto Parry
+        if Config.AutoParry.Enabled then
+            AutoParry:CheckBall()
+        end
         
-        local camera = Workspace.CurrentCamera
-        if camera then
-            local lookVector = camera.CFrame.LookVector
-            local rightVector = camera.CFrame.RightVector
-            local upVector = Vector3.new(0, 1, 0)
+        -- Speed Hack
+        if Humanoid and Config.Movement.Speed then
+            Humanoid.WalkSpeed = Config.Movement.SpeedValue
+        elseif Humanoid then
+            Humanoid.WalkSpeed = OriginalSettings.WalkSpeed
+        end
+        
+        -- Jump Power
+        if Humanoid and Config.Movement.JumpPower then
+            Humanoid.JumpPower = Config.Movement.JumpValue
+        elseif Humanoid then
+            Humanoid.JumpPower = OriginalSettings.JumpPower
+        end
+        
+        -- Fly System
+        if Config.Movement.Fly and Character and HumanoidRootPart then
+            Humanoid.PlatformStand = true
             
-            local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
-            HumanoidRootPart.Velocity = moveVector * Config.Movement.FlySpeed
+            local forward = 0
+            local right = 0
+            local up = 0
+            
+            if State.FlyKeys.W then forward = forward + 1 end
+            if State.FlyKeys.S then forward = forward - 1 end
+            if State.FlyKeys.D then right = right + 1 end
+            if State.FlyKeys.A then right = right - 1 end
+            if State.FlyKeys.Space then up = up + 1 end
+            if State.FlyKeys.LeftControl then up = up - 1 end
+            
+            local camera = Workspace.CurrentCamera
+            if camera then
+                local lookVector = camera.CFrame.LookVector
+                local rightVector = camera.CFrame.RightVector
+                local upVector = Vector3.new(0, 1, 0)
+                
+                local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
+                HumanoidRootPart.Velocity = moveVector * Config.Movement.FlySpeed
+            end
+        elseif Humanoid then
+            Humanoid.PlatformStand = false
         end
-    elseif Humanoid then
-        Humanoid.PlatformStand = false
-    end
-    
-    -- FOV Changer
-    if Camera and Config.Visuals.FOVChanger then
-        Camera.FieldOfView = Config.Visuals.FOVValue
-    elseif Camera then
-        Camera.FieldOfView = OriginalSettings.FOV
-    end
-    
-    -- FullBright
-    if Config.Visuals.FullBright then
-        Lighting.GlobalShadows = false
-        Lighting.Brightness = 2
-    else
-        Lighting.GlobalShadows = OriginalSettings.GlobalShadows
-        Lighting.Brightness = OriginalSettings.Brightness
-    end
-    
-    -- No Shadows
-    Lighting.GlobalShadows = not Config.Visuals.NoShadows
-    
-    -- Ambient Lighting
-    if Config.Visuals.AmbientLighting then
-        Lighting.Ambient = Config.Visuals.AmbientValue
-    else
-        Lighting.Ambient = OriginalSettings.Ambient
-    end
-    
-    -- Time Changer
-    if Config.Visuals.TimeChanger then
-        Lighting.ClockTime = Config.Visuals.TimeValue
-    end
-    
-    -- Remove Effects
-    if Config.Visuals.RemoveEffects then
-        for _, effect in pairs(Lighting:GetChildren()) do
-            if effect:IsA("Atmosphere") or effect:IsA("Sky") then
-                effect:Destroy()
+        
+        -- FOV Changer
+        if Camera and Config.Visuals.FOVChanger then
+            Camera.FieldOfView = Config.Visuals.FOVValue
+        elseif Camera then
+            Camera.FieldOfView = OriginalSettings.FOV
+        end
+        
+        -- FullBright
+        if Config.Visuals.FullBright then
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 2
+        else
+            Lighting.GlobalShadows = OriginalSettings.GlobalShadows
+            Lighting.Brightness = OriginalSettings.Brightness
+        end
+        
+        -- No Shadows
+        Lighting.GlobalShadows = not Config.Visuals.NoShadows
+        
+        -- Ambient Lighting
+        if Config.Visuals.AmbientLighting then
+            Lighting.Ambient = Config.Visuals.AmbientValue
+        else
+            Lighting.Ambient = OriginalSettings.Ambient
+        end
+        
+        -- Time Changer
+        if Config.Visuals.TimeChanger then
+            Lighting.ClockTime = Config.Visuals.TimeValue
+        end
+        
+        -- Remove Effects
+        if Config.Visuals.RemoveEffects then
+            for _, effect in pairs(Lighting:GetChildren()) do
+                if effect:IsA("Atmosphere") or effect:IsA("Sky") then
+                    effect:Destroy()
+                end
             end
         end
-    end
-    
-    -- Remove Particles
-    if Config.Visuals.RemoveParticles then
-        for _, part in pairs(Workspace:GetDescendants()) do
-            if part:IsA("ParticleEmitter") then
-                part:Destroy()
+        
+        -- Remove Particles
+        if Config.Visuals.RemoveParticles then
+            for _, part in pairs(Workspace:GetDescendants()) do
+                if part:IsA("ParticleEmitter") then
+                    part:Destroy()
+                end
             end
         end
-    end
-    
-    -- Rainbow Character
-    if Config.Misc.RainbowCharacter and Character then
-        State.RainbowHue = (State.RainbowHue + 1) % 360
-        local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
-        for _, part in pairs(Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.Color = color
+        
+        -- Rainbow Character
+        if Config.Misc.RainbowCharacter and Character then
+            State.RainbowHue = (State.RainbowHue + 1) % 360
+            local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Color = color
+                end
             end
         end
-    end
-    
-    -- Spin Bot
-    if Config.Misc.SpinBot and HumanoidRootPart then
-        HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
-    end
-    
-    -- Kill Aura
-    Combat:KillAura()
-    
-    -- Bhop
-    Bhop:Update()
-    
-    -- Noclip
-    UpdateNoclip()
-    
-    -- Auto Farm
-    if Config.Misc.AutoFarm then
-        AutoFarm:CollectItems()
-    end
-    
-    -- Anti Void
-    AntiVoid:Check()
-end)
+        
+        -- Spin Bot
+        if Config.Misc.SpinBot and HumanoidRootPart then
+            HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
+        end
+        
+        -- Kill Aura
+        Combat:KillAura()
+        
+        -- Bhop
+        Bhop:Update()
+        
+        -- Noclip
+        UpdateNoclip()
+        
+        -- Auto Farm
+        if Config.Misc.AutoFarm then
+            AutoFarm:CollectItems()
+        end
+        
+        -- Anti Void
+        AntiVoid:Check()
+    end)
+end
 
 --==============================================================================
 -- ANTI-AFK
 --==============================================================================
 
-if Config.Misc.AntiAfk then
-    local VirtualUser = game:GetService("VirtualUser")
-    Player.Idled:Connect(function()
-        VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-    end)
+local function SetupAntiAFK()
+    if Config.Misc.AntiAfk then
+        local VirtualUser = game:GetService("VirtualUser")
+        Player.Idled:Connect(function()
+            VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        end)
+        print("✅ Anti-AFK ativado")
+    end
 end
 
 --==============================================================================
@@ -1738,76 +1776,118 @@ InfiniteJump:Connect()
 -- PLAYER CONNECTIONS
 --==============================================================================
 
-Players.PlayerAdded:Connect(function(player)
-    if Config.ESP.Enabled then
-        ESP:Create(player)
+local function SetupPlayerConnections()
+    Players.PlayerAdded:Connect(function(player)
+        if Config.ESP.Enabled then
+            ESP:Create(player)
+        end
+    end)
+    
+    Players.PlayerRemoving:Connect(function(player)
+        ESP:Remove(player)
+    end)
+    
+    -- Conectar ESP para jogadores existentes
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Player then
+            ESP:Create(player)
+        end
     end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    ESP:Remove(player)
-end)
+end
 
 --==============================================================================
 -- CHARACTER CONNECTIONS
 --==============================================================================
 
-Player.CharacterAdded:Connect(function(char)
-    Character = char
-    Humanoid = char:WaitForChild("Humanoid")
-    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
-    Camera = Workspace.CurrentCamera
+local function SetupCharacterConnections()
+    Player.CharacterAdded:Connect(function(char)
+        Character = char
+        Humanoid = char:WaitForChild("Humanoid")
+        HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+        Camera = Workspace.CurrentCamera
+        
+        if Config.Misc.AutoRespawn then
+            ShowNotification("Auto Respawn", "Personagem respawnado", 2)
+        end
+    end)
+end
+
+--==============================================================================
+-- INICIALIZAÇÃO COMPLETA
+--==============================================================================
+
+local function Initialize()
+    print("🚀 INICIALIZANDO SISTEMA COMPLETO...")
     
-    if Config.Misc.AutoRespawn then
-        ShowNotification("Auto Respawn", "Personagem respawnado", 2)
-    end
-end)
-
---==============================================================================
--- INICIALIZAÇÃO
---==============================================================================
-
--- Cria a interface
-CreateUI()
-
--- Conectar ESP para jogadores existentes
-for _, player in pairs(Players:GetPlayers()) do
-    if player ~= Player then
-        ESP:Create(player)
+    -- Criar interface primeiro
+    CreateUI()
+    
+    -- Configurar sistemas
+    SetupChatSystem()
+    SetupKeybinds()
+    SetupAntiAFK()
+    SetupPlayerConnections()
+    SetupCharacterConnections()
+    
+    -- Iniciar loop principal
+    MainLoop()
+    
+    -- Notificação inicial
+    task.wait(2)
+    ShowNotification("Blade Ball Ultimate Hub v6.0", 
+        "✅ Sistema Universal carregado!\n\n" ..
+        "📝 Comandos disponíveis:\n" ..
+        "• ;menu - Abrir menu\n" ..
+        "• ;esp - Toggle ESP\n" ..
+        "• ;aimbot - Toggle Aimbot\n" ..
+        "• ;fly - Toggle Fly\n" ..
+        "• ;speed - Toggle Speed\n" ..
+        "• ;help - Mostrar ajuda\n\n" ..
+        "🎮 Teclas: RightShift ou M\n" ..
+        "⚔️ Compatível com todos os jogos", 8)
+    
+    print("========================================")
+    print("✅ BLADE BALL ULTIMATE HUB v6.0 UNIVERSAL")
+    print("✅ Sistema carregado com sucesso!")
+    print("🎮 Compatível com todos os jogos Roblox")
+    print("📝 Comandos: ;menu, ;esp, ;aimbot, ;fly, ;speed, ;help")
+    print("🎮 Teclas: RightShift ou M")
+    print("🚀 Funcionalidades implementadas:")
+    print("   • Aimbot e Silent Aim")
+    print("   • ESP Completo (Box, Tracer, Health, etc)")
+    print("   • Auto Parry e Auto Clicker")
+    print("   • Speed, Fly, Noclip, Bhop")
+    print("   • Visual Mods (FOV, Fullbright, etc)")
+    print("   • Combat Mods (Kill Aura, Reach, etc)")
+    print("   • Misc (Anti-AFK, Auto Farm, etc)")
+    print("👨‍💻 Desenvolvedor: gb.paiva23")
+    print("========================================")
+    
+    -- Testar menu
+    task.wait(3)
+    print("🔧 Testando sistema de menu...")
+    print("📱 Tente pressionar RightShift, M ou digitar ;menu no chat")
+    
+    -- Loop para manter script ativo
+    while true do
+        task.wait(1)
     end
 end
 
--- Notificação inicial
-task.wait(2)
-ShowNotification("Blade Ball Ultimate Hub v6.0", 
-    "✅ Sistema Universal carregado!\n\n" ..
-    "📝 Comandos disponíveis:\n" ..
-    "• ;menu - Abrir menu\n" ..
-    "• ;esp - Toggle ESP\n" ..
-    "• ;aimbot - Toggle Aimbot\n" ..
-    "• ;fly - Toggle Fly\n" ..
-    "• ;speed - Toggle Speed\n\n" ..
-    "🎮 Teclas: RightShift ou M\n" ..
-    "⚔️ Compatível com todos os jogos", 8)
+--==============================================================================
+-- EXECUTAR INICIALIZAÇÃO
+--==============================================================================
 
-print("========================================")
-print("✅ BLADE BALL ULTIMATE HUB v6.0 UNIVERSAL")
-print("✅ Sistema carregado com sucesso!")
-print("🎮 Compatível com todos os jogos Roblox")
-print("📝 Comandos: ;menu, ;esp, ;aimbot, ;fly, ;speed")
-print("🎮 Teclas: RightShift ou M")
-print("🚀 Funcionalidades implementadas:")
-print("   • Aimbot e Silent Aim")
-print("   • ESP Completo (Box, Tracer, Health, etc)")
-print("   • Auto Parry e Auto Clicker")
-print("   • Speed, Fly, Noclip, Bhop")
-print("   • Visual Mods (FOV, Fullbright, etc)")
-print("   • Combat Mods (Kill Aura, Reach, etc)")
-print("   • Misc (Anti-AFK, Auto Farm, etc)")
-print("👨‍💻 Desenvolvedor: @gb.paiva23")
-print("========================================")
+-- Executar inicialização com tratamento de erros
+local success, errorMessage = pcall(function()
+    Initialize()
+end)
 
--- Loop para manter script ativo
-while true do
-    task.wait(1)
+if not success then
+    warn("❌ Erro na inicialização: " .. errorMessage)
+    -- Tentar criar pelo menos a interface básica
+    pcall(function()
+        CreateUI()
+        ShowNotification("Erro na inicialização", "Alguns sistemas podem não funcionar\nTente recarregar o script", 5)
+    end)
 end
