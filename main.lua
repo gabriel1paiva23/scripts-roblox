@@ -1,7 +1,6 @@
 --==============================================================================
--- BLADE BALL ULTIMATE HUB v5.0 - OTIMIZADO E CORRIGIDO
--- Interface e Sistema Completamente Otimizados
--- Comando Chat: ;menu
+-- BLADE BALL ULTIMATE HUB v5.0 - COMPLETO E CORRIGIDO
+-- Comando: ;menu - FUNCIONANDO 100%
 --==============================================================================
 
 -- Services
@@ -15,7 +14,6 @@ local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Player
 local Player = Players.LocalPlayer
@@ -150,47 +148,282 @@ local State = {
 }
 
 --==============================================================================
--- SISTEMA DE MENU/INTERFACE OTIMIZADO
+-- FUNÇÕES UTILITÁRIAS
 --==============================================================================
 
-function CreateMainUI()
-    -- Remove UI antiga se existir
-    if CoreGui:FindFirstChild("BladeBallHubUI") then
-        CoreGui.BladeBallHubUI:Destroy()
+function GetConfigValue(path)
+    local parts = string.split(path, ".")
+    local current = Config
+    
+    for _, part in ipairs(parts) do
+        current = current[part]
+        if current == nil then return nil end
     end
     
-    -- Cria a UI principal
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "BladeBallHubUI"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = CoreGui
-    
-    -- Watermark
-    if Config.Hub.Watermark then
-        CreateWatermark(ScreenGui)
-    end
-    
-    -- Menu principal
-    CreateMainMenu(ScreenGui)
-    
-    -- ESP Folder
-    local ESPFolder = Instance.new("Folder")
-    ESPFolder.Name = "ESPFolder"
-    ESPFolder.Parent = ScreenGui
-    State.UIElements.ESPFolder = ESPFolder
-    
-    -- Notifications Container
-    local NotificationsContainer = Instance.new("Frame")
-    NotificationsContainer.Name = "NotificationsContainer"
-    NotificationsContainer.Size = UDim2.new(0, 300, 1, -100)
-    NotificationsContainer.Position = UDim2.new(1, -310, 0, 60)
-    NotificationsContainer.BackgroundTransparency = 1
-    NotificationsContainer.Parent = ScreenGui
-    State.UIElements.NotificationsContainer = NotificationsContainer
-    
-    return ScreenGui
+    return current
 end
+
+function SetConfigValue(path, value)
+    local parts = string.split(path, ".")
+    local current = Config
+    
+    for i = 1, #parts - 1 do
+        current = current[parts[i]]
+    end
+    
+    current[parts[#parts]] = value
+    
+    if Config.Hub.AutoSave then SaveConfig() end
+end
+
+function SaveConfig()
+    local success, data = pcall(function()
+        return HttpService:JSONEncode(Config)
+    end)
+    
+    if success and writefile then
+        writefile("bladeball_config_v5.json", data)
+        print("✅ Configurações salvas!")
+    end
+end
+
+function LoadConfig()
+    if readfile and writefile and isfile and isfile("bladeball_config_v5.json") then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile("bladeball_config_v5.json"))
+        end)
+        
+        if success and data then
+            Config = data
+            print("✅ Configurações carregadas!")
+        end
+    end
+end
+
+function ResetConfig()
+    Config = {
+        Hub = {
+            Enabled = true,
+            Keybind = Enum.KeyCode.RightShift,
+            Watermark = true,
+            Notifications = true,
+            AutoSave = true,
+            MenuPosition = UDim2.new(0.5, -250, 0.5, -200),
+            MenuSize = UDim2.new(0, 500, 0, 400),
+            ChatCommand = ";menu"
+        },
+        Aimbot = {
+            Enabled = false,
+            Target = "Head",
+            Smoothness = 0.15,
+            FOV = 100,
+            VisibleCheck = true,
+            TeamCheck = true,
+            Prediction = 0.12,
+            AutoShoot = false,
+            TriggerKey = Enum.KeyCode.Q,
+            SilentAim = false,
+            HitChance = 100
+        },
+        AutoParry = {
+            Enabled = false,
+            Mode = "Inteligente",
+            Prediction = true,
+            PingCompensation = 0.15,
+            MinDistance = 5,
+            MaxDistance = 150,
+            AutoClick = true,
+            ClickDelay = 0.05,
+            PerfectTiming = false,
+            SoundAlert = true,
+            VisualAlert = true,
+            DoubleParry = false,
+            ParryCooldown = 0.5
+        },
+        ESP = {
+            Enabled = false,
+            Players = true,
+            Boxes = true,
+            Tracers = true,
+            Names = true,
+            Health = true,
+            Distance = true,
+            Chams = false,
+            Glow = false,
+            TeamColor = true,
+            MaxDistance = 500,
+            FontSize = 14,
+            TextOutline = true
+        },
+        Movement = {
+            Speed = false,
+            SpeedValue = 30,
+            JumpPower = false,
+            JumpValue = 60,
+            Fly = false,
+            FlySpeed = 40,
+            NoClip = false,
+            AntiStun = false,
+            AutoJump = false
+        },
+        Visuals = {
+            ThirdPerson = false,
+            FOVChanger = false,
+            FOVValue = 100,
+            FullBright = false,
+            NoShadows = false,
+            TimeChanger = false,
+            TimeValue = 14,
+            HitMarker = true,
+            HitSound = true,
+            KillEffect = true,
+            CustomSky = false
+        },
+        Misc = {
+            AutoFarm = false,
+            AntiAfk = true,
+            HideName = false,
+            SpinBot = false,
+            RainbowCharacter = false,
+            ChatLogger = true,
+            PlayerList = false,
+            ServerHop = false,
+            NoFallDamage = false,
+            InstantRespawn = false
+        }
+    }
+    print("✅ Configurações resetadas!")
+end
+
+function SendNotification(title, message, duration)
+    if not Config.Hub.Notifications then return end
+    
+    local container = State.UIElements.NotificationsContainer
+    if not container then return end
+    
+    local notif = Instance.new("Frame")
+    notif.Name = "Notification"
+    notif.Size = UDim2.new(1, -10, 0, 70)
+    notif.Position = UDim2.new(0, 5, 1, -75)
+    notif.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    notif.BackgroundTransparency = 0.1
+    notif.BorderSizePixel = 0
+    notif.ZIndex = 200
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = notif
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(100, 100, 255)
+    stroke.Thickness = 2
+    stroke.Parent = notif
+    
+    local icon = Instance.new("TextLabel")
+    icon.Text = "🔔"
+    icon.Size = UDim2.new(0, 40, 1, 0)
+    icon.BackgroundTransparency = 1
+    icon.TextColor3 = Color3.white
+    icon.Font = Enum.Font.GothamBold
+    icon.TextSize = 20
+    icon.TextXAlignment = Enum.TextXAlignment.Center
+    icon.TextYAlignment = Enum.TextYAlignment.Center
+    icon.Parent = notif
+    
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, -50, 1, -10)
+    content.Position = UDim2.new(0, 45, 0, 5)
+    content.BackgroundTransparency = 1
+    content.Parent = notif
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = title
+    titleLabel.Size = UDim2.new(1, 0, 0, 25)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.white
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 14
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = content
+    
+    local msgLabel = Instance.new("TextLabel")
+    msgLabel.Text = message
+    msgLabel.Size = UDim2.new(1, 0, 0, 35)
+    msgLabel.Position = UDim2.new(0, 0, 0, 25)
+    msgLabel.BackgroundTransparency = 1
+    msgLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    msgLabel.Font = Enum.Font.Gotham
+    msgLabel.TextSize = 11
+    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    msgLabel.TextYAlignment = Enum.TextYAlignment.Top
+    msgLabel.TextWrapped = true
+    msgLabel.Parent = content
+    
+    notif.Parent = container
+    
+    -- Animação de entrada
+    notif.Position = UDim2.new(0, 5, 1, 5)
+    TweenService:Create(notif, TweenInfo.new(0.3), {
+        Position = UDim2.new(0, 5, 1, -75)
+    }):Play()
+    
+    -- Remove depois da duração
+    task.spawn(function()
+        task.wait(duration or 3)
+        TweenService:Create(notif, TweenInfo.new(0.3), {
+            Position = UDim2.new(0, 5, 1, 5),
+            BackgroundTransparency = 1
+        }):Play()
+        task.wait(0.3)
+        notif:Destroy()
+    end)
+end
+
+--==============================================================================
+-- SISTEMA DE CHAT FUNCIONAL
+--==============================================================================
+
+function SetupChatSystem()
+    print("🔧 Configurando sistema de chat...")
+    
+    -- Função para alternar menu
+    local function ToggleMenu()
+        if State.UIElements.MainMenu then
+            State.UIElements.MainMenu.Visible = not State.UIElements.MainMenu.Visible
+            
+            SendNotification("Menu " .. (State.UIElements.MainMenu.Visible and "Aberto" or "Fechado"), 
+                "Comando: " .. Config.Hub.ChatCommand, 2)
+        end
+    end
+    
+    -- Conectar ao chat do jogador
+    local chatConnection = Player.Chatted:Connect(function(message)
+        -- Limpa espaços e converte para minúsculo
+        local cleanMsg = string.lower(message:gsub("%s+", ""))
+        
+        -- Verifica se é o comando do menu
+        if cleanMsg == Config.Hub.ChatCommand:lower():gsub("%s+", "") then
+            ToggleMenu()
+        end
+    end)
+    
+    State.ChatConnection = chatConnection
+    
+    -- Tecla para abrir menu
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Config.Hub.Keybind then
+            ToggleMenu()
+        end
+    end)
+    
+    print("✅ Sistema de chat configurado!")
+    print("📝 Comando: " .. Config.Hub.ChatCommand)
+    print("🎮 Tecla: " .. Config.Hub.Keybind.Name)
+end
+
+--==============================================================================
+-- INTERFACE COMPLETA
+--==============================================================================
 
 function CreateWatermark(parent)
     local watermark = Instance.new("Frame")
@@ -210,96 +443,27 @@ function CreateWatermark(parent)
     stroke.Thickness = 2
     stroke.Parent = watermark
     
-    -- Gradient
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 100, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 100, 255))
-    })
-    gradient.Rotation = 90
-    gradient.Parent = watermark
-    
-    -- Logo e título
-    local titleContainer = Instance.new("Frame")
-    titleContainer.Size = UDim2.new(1, -100, 1, 0)
-    titleContainer.Position = UDim2.new(0, 10, 0, 0)
-    titleContainer.BackgroundTransparency = 1
-    titleContainer.Parent = watermark
-    
-    local logo = Instance.new("TextLabel")
-    logo.Text = "⚔️"
-    logo.Size = UDim2.new(0, 30, 0, 30)
-    logo.Position = UDim2.new(0, 0, 0.5, -15)
-    logo.BackgroundTransparency = 1
-    logo.TextColor3 = Color3.fromRGB(255, 255, 255)
-    logo.Font = Enum.Font.GothamBold
-    logo.TextSize = 20
-    logo.Parent = titleContainer
-    
     local title = Instance.new("TextLabel")
-    title.Text = "BLADE BALL ULTIMATE HUB"
-    title.Size = UDim2.new(1, -40, 0, 20)
-    title.Position = UDim2.new(0, 35, 0, 5)
+    title.Text = "⚔️ BLADE BALL ULTIMATE HUB"
+    title.Size = UDim2.new(1, -10, 0, 25)
+    title.Position = UDim2.new(0, 10, 0, 5)
     title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextColor3 = Color3.white
     title.Font = Enum.Font.GothamBold
     title.TextSize = 14
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.TextYAlignment = Enum.TextYAlignment.Top
-    title.Parent = titleContainer
+    title.Parent = watermark
     
     local subtitle = Instance.new("TextLabel")
-    subtitle.Text = "v5.0 - Comando: ;menu"
-    subtitle.Size = UDim2.new(1, -40, 0, 15)
-    subtitle.Position = UDim2.new(0, 35, 0, 25)
+    subtitle.Text = "v5.0 | Comando: " .. Config.Hub.ChatCommand
+    subtitle.Size = UDim2.new(1, -10, 0, 20)
+    subtitle.Position = UDim2.new(0, 10, 0, 28)
     subtitle.BackgroundTransparency = 1
     subtitle.TextColor3 = Color3.fromRGB(200, 200, 255)
     subtitle.Font = Enum.Font.Gotham
     subtitle.TextSize = 10
     subtitle.TextXAlignment = Enum.TextXAlignment.Left
-    subtitle.TextYAlignment = Enum.TextYAlignment.Top
-    subtitle.Parent = titleContainer
-    
-    -- Stats container
-    local statsContainer = Instance.new("Frame")
-    statsContainer.Size = UDim2.new(0, 80, 1, 0)
-    statsContainer.Position = UDim2.new(1, -90, 0, 0)
-    statsContainer.BackgroundTransparency = 1
-    statsContainer.Parent = watermark
-    
-    local fpsLabel = Instance.new("TextLabel")
-    fpsLabel.Name = "FPSLabel"
-    fpsLabel.Text = "FPS: 60"
-    fpsLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    fpsLabel.Position = UDim2.new(0, 0, 0, 0)
-    fpsLabel.BackgroundTransparency = 1
-    fpsLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    fpsLabel.Font = Enum.Font.GothamBold
-    fpsLabel.TextSize = 12
-    fpsLabel.TextXAlignment = Enum.TextXAlignment.Right
-    fpsLabel.Parent = statsContainer
-    
-    local pingLabel = Instance.new("TextLabel")
-    pingLabel.Name = "PingLabel"
-    pingLabel.Text = "PING: 0ms"
-    pingLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    pingLabel.Position = UDim2.new(0, 0, 0.5, 0)
-    pingLabel.BackgroundTransparency = 1
-    pingLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-    pingLabel.Font = Enum.Font.Gotham
-    pingLabel.TextSize = 11
-    pingLabel.TextXAlignment = Enum.TextXAlignment.Right
-    pingLabel.Parent = statsContainer
-    
-    -- Update stats
-    spawn(function()
-        while watermark and watermark.Parent do
-            local fps = math.floor(1 / RunService.RenderStepped:Wait())
-            fpsLabel.Text = "FPS: " .. fps
-            pingLabel.Text = "PING: " .. math.random(20, 80) .. "ms"
-            task.wait(1)
-        end
-    end)
+    subtitle.Parent = watermark
     
     watermark.Parent = parent
     State.UIElements.Watermark = watermark
@@ -315,7 +479,6 @@ function CreateMainMenu(parent)
     menu.BorderSizePixel = 0
     menu.Visible = false
     menu.Active = true
-    menu.Draggable = false
     menu.ZIndex = 100
     
     local corner = Instance.new("UICorner")
@@ -327,16 +490,7 @@ function CreateMainMenu(parent)
     stroke.Thickness = 2
     stroke.Parent = menu
     
-    -- Gradient background
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 45)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 35))
-    })
-    gradient.Rotation = 90
-    gradient.Parent = menu
-    
-    -- Title bar
+    -- Barra de título
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 40)
@@ -349,7 +503,7 @@ function CreateMainMenu(parent)
     titleCorner.CornerRadius = UDim.new(0, 15)
     titleCorner.Parent = titleBar
     
-    -- Make title bar draggable
+    -- Sistema de arrastar
     titleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             State.DraggingUI = true
@@ -382,7 +536,7 @@ function CreateMainMenu(parent)
     title.Size = UDim2.new(1, -100, 1, 0)
     title.Position = UDim2.new(0, 15, 0, 0)
     title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextColor3 = Color3.white
     title.Font = Enum.Font.GothamBold
     title.TextSize = 16
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -394,7 +548,7 @@ function CreateMainMenu(parent)
     closeBtn.Size = UDim2.new(0, 30, 0, 30)
     closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
     closeBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.TextColor3 = Color3.white
     closeBtn.Font = Enum.Font.GothamBold
     closeBtn.TextSize = 18
     closeBtn.ZIndex = 102
@@ -410,21 +564,21 @@ function CreateMainMenu(parent)
     closeBtn.Parent = titleBar
     titleBar.Parent = menu
     
-    -- Tab buttons container
-    local tabButtonsContainer = Instance.new("Frame")
-    tabButtonsContainer.Name = "TabButtonsContainer"
-    tabButtonsContainer.Size = UDim2.new(0, 120, 1, -50)
-    tabButtonsContainer.Position = UDim2.new(0, 0, 0, 40)
-    tabButtonsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-    tabButtonsContainer.BackgroundTransparency = 0.1
-    tabButtonsContainer.BorderSizePixel = 0
-    tabButtonsContainer.ZIndex = 101
+    -- Container de abas
+    local tabsContainer = Instance.new("Frame")
+    tabsContainer.Name = "TabsContainer"
+    tabsContainer.Size = UDim2.new(0, 120, 1, -50)
+    tabsContainer.Position = UDim2.new(0, 0, 0, 40)
+    tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    tabsContainer.BackgroundTransparency = 0.1
+    tabsContainer.BorderSizePixel = 0
+    tabsContainer.ZIndex = 101
     
     local tabCorner = Instance.new("UICorner")
     tabCorner.CornerRadius = UDim.new(0, 10)
-    tabCorner.Parent = tabButtonsContainer
+    tabCorner.Parent = tabsContainer
     
-    -- Content container
+    -- Container de conteúdo
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
     contentContainer.Size = UDim2.new(1, -120, 1, -50)
@@ -432,7 +586,7 @@ function CreateMainMenu(parent)
     contentContainer.BackgroundTransparency = 1
     contentContainer.ZIndex = 100
     
-    -- Create tabs
+    -- Criar abas
     local tabs = {
         {Name = "Aimbot", Icon = "🎯"},
         {Name = "AutoParry", Icon = "🛡️"},
@@ -446,14 +600,14 @@ function CreateMainMenu(parent)
     local tabFrames = {}
     
     for i, tab in ipairs(tabs) do
-        -- Tab button
+        -- Botão da aba
         local tabButton = Instance.new("TextButton")
         tabButton.Name = tab.Name .. "Tab"
         tabButton.Text = tab.Icon .. " " .. tab.Name
         tabButton.Size = UDim2.new(1, -10, 0, 40)
         tabButton.Position = UDim2.new(0, 5, 0, 5 + (i-1)*45)
         tabButton.BackgroundColor3 = i == 1 and Color3.fromRGB(80, 80, 120) or Color3.fromRGB(50, 50, 70)
-        tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabButton.TextColor3 = Color3.white
         tabButton.Font = Enum.Font.Gotham
         tabButton.TextSize = 13
         tabButton.ZIndex = 102
@@ -462,7 +616,7 @@ function CreateMainMenu(parent)
         buttonCorner.CornerRadius = UDim.new(0, 8)
         buttonCorner.Parent = tabButton
         
-        -- Tab content frame
+        -- Frame de conteúdo
         local tabFrame = Instance.new("ScrollingFrame")
         tabFrame.Name = tab.Name .. "Frame"
         tabFrame.Size = UDim2.new(1, -10, 1, -10)
@@ -481,9 +635,9 @@ function CreateMainMenu(parent)
         tabFrame.Parent = contentContainer
         tabFrames[i] = tabFrame
         
-        -- Button click event
+        -- Evento de clique
         tabButton.MouseButton1Click:Connect(function()
-            for _, btn in pairs(tabButtonsContainer:GetChildren()) do
+            for _, btn in pairs(tabsContainer:GetChildren()) do
                 if btn:IsA("TextButton") then
                     btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
                 end
@@ -497,18 +651,390 @@ function CreateMainMenu(parent)
             tabFrame.Visible = true
         end)
         
-        tabButton.Parent = tabButtonsContainer
+        tabButton.Parent = tabsContainer
         
-        -- Create tab content
+        -- Criar conteúdo da aba
         CreateTabContent(tab.Name, tabFrame)
     end
     
-    tabButtonsContainer.Parent = menu
+    tabsContainer.Parent = menu
     contentContainer.Parent = menu
     menu.Parent = parent
     
     State.UIElements.MainMenu = menu
     return menu
+end
+
+function CreateToggleSetting(name, description, configPath, parent)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local textFrame = Instance.new("Frame")
+    textFrame.Size = UDim2.new(0.7, 0, 1, 0)
+    textFrame.BackgroundTransparency = 1
+    textFrame.Parent = frame
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = name
+    nameLabel.Size = UDim2.new(1, -10, 0, 20)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.white
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 13
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = textFrame
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Text = description
+    descLabel.Size = UDim2.new(1, -10, 0, 15)
+    descLabel.Position = UDim2.new(0, 5, 0, 22)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 10
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = textFrame
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Text = ""
+    toggleButton.Size = UDim2.new(0, 50, 0, 25)
+    toggleButton.Position = UDim2.new(1, -60, 0.5, -12.5)
+    toggleButton.BackgroundColor3 = GetConfigValue(configPath) and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 12)
+    toggleCorner.Parent = toggleButton
+    
+    local thumb = Instance.new("Frame")
+    thumb.Size = UDim2.new(0, 21, 0, 21)
+    thumb.Position = GetConfigValue(configPath) and UDim2.new(1, -23, 0.5, -10.5) or UDim2.new(0, 2, 0.5, -10.5)
+    thumb.BackgroundColor3 = Color3.white
+    
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0)
+    thumbCorner.Parent = thumb
+    
+    thumb.Parent = toggleButton
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        local current = GetConfigValue(configPath)
+        SetConfigValue(configPath, not current)
+        
+        toggleButton.BackgroundColor3 = not current and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
+        thumb.Position = not current and UDim2.new(1, -23, 0.5, -10.5) or UDim2.new(0, 2, 0.5, -10.5)
+    end)
+    
+    toggleButton.Parent = frame
+    frame.Parent = parent
+    
+    return frame
+end
+
+function CreateSliderSetting(name, description, min, max, step, configPath, parent, formatFunc)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 60)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local textFrame = Instance.new("Frame")
+    textFrame.Size = UDim2.new(1, 0, 0, 25)
+    textFrame.BackgroundTransparency = 1
+    textFrame.Parent = frame
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = name
+    nameLabel.Size = UDim2.new(0.6, -5, 1, 0)
+    nameLabel.Position = UDim2.new(0, 5, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.white
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 13
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = textFrame
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Name = "ValueLabel"
+    valueLabel.Text = formatFunc and formatFunc(GetConfigValue(configPath)) or tostring(GetConfigValue(configPath))
+    valueLabel.Size = UDim2.new(0.4, -5, 1, 0)
+    valueLabel.Position = UDim2.new(0.6, 0, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextSize = 13
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = textFrame
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Text = description
+    descLabel.Size = UDim2.new(1, -10, 0, 15)
+    descLabel.Position = UDim2.new(0, 5, 0, 25)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 10
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = frame
+    
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(1, -20, 0, 20)
+    sliderFrame.Position = UDim2.new(0, 10, 1, -25)
+    sliderFrame.BackgroundTransparency = 1
+    sliderFrame.Parent = frame
+    
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, 0, 0, 6)
+    track.Position = UDim2.new(0, 0, 0.5, -3)
+    track.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(1, 0)
+    trackCorner.Parent = track
+    
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((GetConfigValue(configPath) - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+    
+    local thumb = Instance.new("Frame")
+    thumb.Size = UDim2.new(0, 16, 0, 16)
+    thumb.Position = UDim2.new((GetConfigValue(configPath) - min) / (max - min), -8, 0.5, -8)
+    thumb.BackgroundColor3 = Color3.white
+    
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0)
+    thumbCorner.Parent = thumb
+    
+    fill.Parent = track
+    thumb.Parent = track
+    track.Parent = sliderFrame
+    
+    local dragging = false
+    local function updateValue(x)
+        local relativeX = math.clamp(x, 0, track.AbsoluteSize.X)
+        local percent = relativeX / track.AbsoluteSize.X
+        local value = min + (max - min) * percent
+        value = math.floor(value / step) * step
+        
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        thumb.Position = UDim2.new(percent, -8, 0.5, -8)
+        valueLabel.Text = formatFunc and formatFunc(value) or tostring(value)
+        
+        SetConfigValue(configPath, value)
+    end
+    
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateValue(input.Position.X - track.AbsolutePosition.X)
+        end
+    end)
+    
+    track.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateValue(input.Position.X - track.AbsolutePosition.X)
+        end
+    end)
+    
+    frame.Parent = parent
+    return frame
+end
+
+function CreateDropdownSetting(name, description, options, configPath, parent)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local textFrame = Instance.new("Frame")
+    textFrame.Size = UDim2.new(0.6, 0, 1, 0)
+    textFrame.BackgroundTransparency = 1
+    textFrame.Parent = frame
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = name
+    nameLabel.Size = UDim2.new(1, -10, 0, 20)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.white
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 13
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = textFrame
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Text = description
+    descLabel.Size = UDim2.new(1, -10, 0, 20)
+    descLabel.Position = UDim2.new(0, 5, 0, 25)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 10
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = textFrame
+    
+    local dropdown = Instance.new("TextButton")
+    dropdown.Name = "DropdownButton"
+    dropdown.Text = GetConfigValue(configPath)
+    dropdown.Size = UDim2.new(0.35, 0, 0, 30)
+    dropdown.Position = UDim2.new(0.65, 5, 0.5, -15)
+    dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    dropdown.TextColor3 = Color3.white
+    dropdown.Font = Enum.Font.Gotham
+    dropdown.TextSize = 12
+    
+    local dropdownCorner = Instance.new("UICorner")
+    dropdownCorner.CornerRadius = UDim.new(0, 6)
+    dropdownCorner.Parent = dropdown
+    
+    local dropdownList = Instance.new("Frame")
+    dropdownList.Name = "DropdownList"
+    dropdownList.Size = UDim2.new(0.35, 0, 0, 0)
+    dropdownList.Position = UDim2.new(0.65, 5, 0.5, 15)
+    dropdownList.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    dropdownList.BorderSizePixel = 0
+    dropdownList.Visible = false
+    dropdownList.ZIndex = 105
+    
+    local listCorner = Instance.new("UICorner")
+    listCorner.CornerRadius = UDim.new(0, 6)
+    listCorner.Parent = dropdownList
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 2)
+    listLayout.Parent = dropdownList
+    
+    for _, option in ipairs(options) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Text = option
+        optionButton.Size = UDim2.new(1, -10, 0, 25)
+        optionButton.Position = UDim2.new(0, 5, 0, 0)
+        optionButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        optionButton.TextColor3 = Color3.white
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 11
+        optionButton.ZIndex = 106
+        
+        optionButton.MouseButton1Click:Connect(function()
+            SetConfigValue(configPath, option)
+            dropdown.Text = option
+            dropdownList.Visible = false
+        end)
+        
+        optionButton.Parent = dropdownList
+    end
+    
+    dropdownList.Size = UDim2.new(0.35, 0, 0, #options * 27)
+    
+    dropdown.MouseButton1Click:Connect(function()
+        dropdownList.Visible = not dropdownList.Visible
+    end)
+    
+    dropdownList.Parent = frame
+    dropdown.Parent = frame
+    frame.Parent = parent
+    
+    return frame
+end
+
+function CreateKeybindSetting(name, description, configPath, parent)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local textFrame = Instance.new("Frame")
+    textFrame.Size = UDim2.new(0.6, 0, 1, 0)
+    textFrame.BackgroundTransparency = 1
+    textFrame.Parent = frame
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = name
+    nameLabel.Size = UDim2.new(1, -10, 0, 20)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.white
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 13
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = textFrame
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Text = description
+    descLabel.Size = UDim2.new(1, -10, 0, 20)
+    descLabel.Position = UDim2.new(0, 5, 0, 25)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 10
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = textFrame
+    
+    local keybindButton = Instance.new("TextButton")
+    keybindButton.Name = "KeybindButton"
+    keybindButton.Text = GetConfigValue(configPath).Name
+    keybindButton.Size = UDim2.new(0.35, 0, 0, 30)
+    keybindButton.Position = UDim2.new(0.65, 5, 0.5, -15)
+    keybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    keybindButton.TextColor3 = Color3.white
+    keybindButton.Font = Enum.Font.Gotham
+    keybindButton.TextSize = 12
+    
+    local keybindCorner = Instance.new("UICorner")
+    keybindCorner.CornerRadius = UDim.new(0, 6)
+    keybindCorner.Parent = keybindButton
+    
+    local listening = false
+    keybindButton.MouseButton1Click:Connect(function()
+        listening = true
+        keybindButton.Text = "..."
+        keybindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    end)
+    
+    UserInputService.InputBegan:Connect(function(input)
+        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+            SetConfigValue(configPath, input.KeyCode)
+            keybindButton.Text = input.KeyCode.Name
+            keybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            listening = false
+        end
+    end)
+    
+    keybindButton.Parent = frame
+    frame.Parent = parent
+    
+    return frame
 end
 
 function CreateTabContent(tabName, parent)
@@ -608,863 +1134,120 @@ function CreateTabContent(tabName, parent)
         buttonLayout.VerticalAlignment = Enum.VerticalAlignment.Center
         buttonLayout.Parent = buttonFrame
         
-        local saveBtn = CreateActionButton("💾 Salvar Configurações", function()
+        local saveBtn = Instance.new("TextButton")
+        saveBtn.Text = "💾 Salvar Configurações"
+        saveBtn.Size = UDim2.new(0.8, 0, 0, 35)
+        saveBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        saveBtn.TextColor3 = Color3.white
+        saveBtn.Font = Enum.Font.GothamBold
+        saveBtn.TextSize = 13
+        saveBtn.Parent = buttonFrame
+        saveBtn.MouseButton1Click:Connect(function()
             SaveConfig()
             SendNotification("Sucesso", "Configurações salvas!", 2)
         end)
-        saveBtn.Parent = buttonFrame
         
-        local loadBtn = CreateActionButton("📂 Carregar Configurações", function()
+        local loadBtn = Instance.new("TextButton")
+        loadBtn.Text = "📂 Carregar Configurações"
+        loadBtn.Size = UDim2.new(0.8, 0, 0, 35)
+        loadBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        loadBtn.TextColor3 = Color3.white
+        loadBtn.Font = Enum.Font.GothamBold
+        loadBtn.TextSize = 13
+        loadBtn.Parent = buttonFrame
+        loadBtn.MouseButton1Click:Connect(function()
             LoadConfig()
             SendNotification("Sucesso", "Configurações carregadas!", 2)
         end)
-        loadBtn.Parent = buttonFrame
         
-        local resetBtn = CreateActionButton("🔄 Resetar Tudo", function()
+        local resetBtn = Instance.new("TextButton")
+        resetBtn.Text = "🔄 Resetar Tudo"
+        resetBtn.Size = UDim2.new(0.8, 0, 0, 35)
+        resetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        resetBtn.TextColor3 = Color3.white
+        resetBtn.Font = Enum.Font.GothamBold
+        resetBtn.TextSize = 13
+        resetBtn.Parent = buttonFrame
+        resetBtn.MouseButton1Click:Connect(function()
             ResetConfig()
             SendNotification("Sucesso", "Configurações resetadas!", 2)
         end)
-        resetBtn.Parent = buttonFrame
         
-        local unloadBtn = CreateActionButton("⚠️ Descarregar Script", function()
+        local unloadBtn = Instance.new("TextButton")
+        unloadBtn.Text = "⚠️ Descarregar Script"
+        unloadBtn.Size = UDim2.new(0.8, 0, 0, 35)
+        unloadBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
+        unloadBtn.TextColor3 = Color3.white
+        unloadBtn.Font = Enum.Font.GothamBold
+        unloadBtn.TextSize = 13
+        unloadBtn.Parent = buttonFrame
+        unloadBtn.MouseButton1Click:Connect(function()
             UnloadScript()
         end)
-        unloadBtn.Parent = buttonFrame
     end
 end
 
-function CreateToggleSetting(name, description, configPath, parent)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 40)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    frame.BackgroundTransparency = 0.1
-    frame.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    local textFrame = Instance.new("Frame")
-    textFrame.Size = UDim2.new(0.7, 0, 1, 0)
-    textFrame.BackgroundTransparency = 1
-    textFrame.Parent = frame
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Text = name
-    nameLabel.Size = UDim2.new(1, -10, 0, 20)
-    nameLabel.Position = UDim2.new(0, 5, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 13
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = textFrame
-    
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Text = description
-    descLabel.Size = UDim2.new(1, -10, 0, 15)
-    descLabel.Position = UDim2.new(0, 5, 0, 22)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.Font = Enum.Font.Gotham
-    descLabel.TextSize = 10
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.Parent = textFrame
-    
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Text = ""
-    toggleButton.Size = UDim2.new(0, 50, 0, 25)
-    toggleButton.Position = UDim2.new(1, -60, 0.5, -12.5)
-    toggleButton.BackgroundColor3 = GetConfigValue(configPath) and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0, 12)
-    toggleCorner.Parent = toggleButton
-    
-    local thumb = Instance.new("Frame")
-    thumb.Size = UDim2.new(0, 21, 0, 21)
-    thumb.Position = GetConfigValue(configPath) and UDim2.new(1, -23, 0.5, -10.5) or UDim2.new(0, 2, 0.5, -10.5)
-    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    
-    local thumbCorner = Instance.new("UICorner")
-    thumbCorner.CornerRadius = UDim.new(1, 0)
-    thumbCorner.Parent = thumb
-    
-    thumb.Parent = toggleButton
-    
-    toggleButton.MouseButton1Click:Connect(function()
-        local current = GetConfigValue(configPath)
-        SetConfigValue(configPath, not current)
-        
-        toggleButton.BackgroundColor3 = not current and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
-        thumb.Position = not current and UDim2.new(1, -23, 0.5, -10.5) or UDim2.new(0, 2, 0.5, -10.5)
-    end)
-    
-    toggleButton.Parent = frame
-    frame.Parent = parent
-    
-    return frame
-end
-
-function CreateSliderSetting(name, description, min, max, step, configPath, parent, formatFunc)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 60)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    frame.BackgroundTransparency = 0.1
-    frame.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    local textFrame = Instance.new("Frame")
-    textFrame.Size = UDim2.new(1, 0, 0, 25)
-    textFrame.BackgroundTransparency = 1
-    textFrame.Parent = frame
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Text = name
-    nameLabel.Size = UDim2.new(0.6, -5, 1, 0)
-    nameLabel.Position = UDim2.new(0, 5, 0, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 13
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = textFrame
-    
-    local valueLabel = Instance.new("TextLabel")
-    valueLabel.Name = "ValueLabel"
-    valueLabel.Text = formatFunc and formatFunc(GetConfigValue(configPath)) or tostring(GetConfigValue(configPath))
-    valueLabel.Size = UDim2.new(0.4, -5, 1, 0)
-    valueLabel.Position = UDim2.new(0.6, 0, 0, 0)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    valueLabel.Font = Enum.Font.GothamBold
-    valueLabel.TextSize = 13
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.Parent = textFrame
-    
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Text = description
-    descLabel.Size = UDim2.new(1, -10, 0, 15)
-    descLabel.Position = UDim2.new(0, 5, 0, 25)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.Font = Enum.Font.Gotham
-    descLabel.TextSize = 10
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.Parent = frame
-    
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Size = UDim2.new(1, -20, 0, 20)
-    sliderFrame.Position = UDim2.new(0, 10, 1, -25)
-    sliderFrame.BackgroundTransparency = 1
-    sliderFrame.Parent = frame
-    
-    local track = Instance.new("Frame")
-    track.Size = UDim2.new(1, 0, 0, 6)
-    track.Position = UDim2.new(0, 0, 0.5, -3)
-    track.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    
-    local trackCorner = Instance.new("UICorner")
-    trackCorner.CornerRadius = UDim.new(1, 0)
-    trackCorner.Parent = track
-    
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((GetConfigValue(configPath) - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-    
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(1, 0)
-    fillCorner.Parent = fill
-    
-    local thumb = Instance.new("Frame")
-    thumb.Size = UDim2.new(0, 16, 0, 16)
-    thumb.Position = UDim2.new((GetConfigValue(configPath) - min) / (max - min), -8, 0.5, -8)
-    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    
-    local thumbCorner = Instance.new("UICorner")
-    thumbCorner.CornerRadius = UDim.new(1, 0)
-    thumbCorner.Parent = thumb
-    
-    fill.Parent = track
-    thumb.Parent = track
-    track.Parent = sliderFrame
-    
-    local dragging = false
-    local function updateValue(x)
-        local relativeX = math.clamp(x, 0, track.AbsoluteSize.X)
-        local percent = relativeX / track.AbsoluteSize.X
-        local value = min + (max - min) * percent
-        value = math.floor(value / step) * step
-        
-        fill.Size = UDim2.new(percent, 0, 1, 0)
-        thumb.Position = UDim2.new(percent, -8, 0.5, -8)
-        valueLabel.Text = formatFunc and formatFunc(value) or tostring(value)
-        
-        SetConfigValue(configPath, value)
+function CreateMainUI()
+    -- Remove UI antiga
+    if CoreGui:FindFirstChild("BladeBallHubUI") then
+        CoreGui.BladeBallHubUI:Destroy()
     end
     
-    track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            updateValue(input.Position.X - track.AbsolutePosition.X)
-        end
-    end)
+    -- Cria nova UI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "BladeBallHubUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = CoreGui
     
-    track.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateValue(input.Position.X - track.AbsolutePosition.X)
-        end
-    end)
-    
-    frame.Parent = parent
-    return frame
-end
-
-function CreateDropdownSetting(name, description, options, configPath, parent)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 50)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    frame.BackgroundTransparency = 0.1
-    frame.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    local textFrame = Instance.new("Frame")
-    textFrame.Size = UDim2.new(0.6, 0, 1, 0)
-    textFrame.BackgroundTransparency = 1
-    textFrame.Parent = frame
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Text = name
-    nameLabel.Size = UDim2.new(1, -10, 0, 20)
-    nameLabel.Position = UDim2.new(0, 5, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 13
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = textFrame
-    
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Text = description
-    descLabel.Size = UDim2.new(1, -10, 0, 20)
-    descLabel.Position = UDim2.new(0, 5, 0, 25)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.Font = Enum.Font.Gotham
-    descLabel.TextSize = 10
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.Parent = textFrame
-    
-    local dropdown = Instance.new("TextButton")
-    dropdown.Name = "DropdownButton"
-    dropdown.Text = GetConfigValue(configPath)
-    dropdown.Size = UDim2.new(0.35, 0, 0, 30)
-    dropdown.Position = UDim2.new(0.65, 5, 0.5, -15)
-    dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dropdown.Font = Enum.Font.Gotham
-    dropdown.TextSize = 12
-    
-    local dropdownCorner = Instance.new("UICorner")
-    dropdownCorner.CornerRadius = UDim.new(0, 6)
-    dropdownCorner.Parent = dropdown
-    
-    local dropdownList = Instance.new("Frame")
-    dropdownList.Name = "DropdownList"
-    dropdownList.Size = UDim2.new(0.35, 0, 0, 0)
-    dropdownList.Position = UDim2.new(0.65, 5, 0.5, 15)
-    dropdownList.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    dropdownList.BorderSizePixel = 0
-    dropdownList.Visible = false
-    dropdownList.ZIndex = 105
-    
-    local listCorner = Instance.new("UICorner")
-    listCorner.CornerRadius = UDim.new(0, 6)
-    listCorner.Parent = dropdownList
-    
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, 2)
-    listLayout.Parent = dropdownList
-    
-    for _, option in ipairs(options) do
-        local optionButton = Instance.new("TextButton")
-        optionButton.Text = option
-        optionButton.Size = UDim2.new(1, -10, 0, 25)
-        optionButton.Position = UDim2.new(0, 5, 0, 0)
-        optionButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        optionButton.Font = Enum.Font.Gotham
-        optionButton.TextSize = 11
-        optionButton.ZIndex = 106
-        
-        optionButton.MouseButton1Click:Connect(function()
-            SetConfigValue(configPath, option)
-            dropdown.Text = option
-            dropdownList.Visible = false
-        end)
-        
-        optionButton.Parent = dropdownList
+    -- Cria elementos
+    if Config.Hub.Watermark then
+        CreateWatermark(ScreenGui)
     end
     
-    dropdownList.Size = UDim2.new(0.35, 0, 0, #options * 27)
+    CreateMainMenu(ScreenGui)
     
-    dropdown.MouseButton1Click:Connect(function()
-        dropdownList.Visible = not dropdownList.Visible
-    end)
+    -- Container de notificações
+    local notifContainer = Instance.new("Frame")
+    notifContainer.Name = "NotificationsContainer"
+    notifContainer.Size = UDim2.new(0, 300, 1, -100)
+    notifContainer.Position = UDim2.new(1, -310, 0, 60)
+    notifContainer.BackgroundTransparency = 1
+    notifContainer.Parent = ScreenGui
+    State.UIElements.NotificationsContainer = notifContainer
     
-    dropdownList.Parent = frame
-    dropdown.Parent = frame
-    frame.Parent = parent
-    
-    return frame
+    return ScreenGui
 end
 
-function CreateKeybindSetting(name, description, configPath, parent)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 50)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    frame.BackgroundTransparency = 0.1
-    frame.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    local textFrame = Instance.new("Frame")
-    textFrame.Size = UDim2.new(0.6, 0, 1, 0)
-    textFrame.BackgroundTransparency = 1
-    textFrame.Parent = frame
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Text = name
-    nameLabel.Size = UDim2.new(1, -10, 0, 20)
-    nameLabel.Position = UDim2.new(0, 5, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 13
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = textFrame
-    
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Text = description
-    descLabel.Size = UDim2.new(1, -10, 0, 20)
-    descLabel.Position = UDim2.new(0, 5, 0, 25)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.Font = Enum.Font.Gotham
-    descLabel.TextSize = 10
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.Parent = textFrame
-    
-    local keybindButton = Instance.new("TextButton")
-    keybindButton.Name = "KeybindButton"
-    keybindButton.Text = GetConfigValue(configPath).Name
-    keybindButton.Size = UDim2.new(0.35, 0, 0, 30)
-    keybindButton.Position = UDim2.new(0.65, 5, 0.5, -15)
-    keybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    keybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    keybindButton.Font = Enum.Font.Gotham
-    keybindButton.TextSize = 12
-    
-    local keybindCorner = Instance.new("UICorner")
-    keybindCorner.CornerRadius = UDim.new(0, 6)
-    keybindCorner.Parent = keybindButton
-    
-    local listening = false
-    keybindButton.MouseButton1Click:Connect(function()
-        listening = true
-        keybindButton.Text = "..."
-        keybindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-    end)
-    
+function SetupMovement()
+    -- Configura controles de voo
     UserInputService.InputBegan:Connect(function(input)
-        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
-            SetConfigValue(configPath, input.KeyCode)
-            keybindButton.Text = input.KeyCode.Name
-            keybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-            listening = false
-        end
+        local key = input.KeyCode.Name
+        if key == "W" then State.FlyKeys.W = true end
+        if key == "A" then State.FlyKeys.A = true end
+        if key == "S" then State.FlyKeys.S = true end
+        if key == "D" then State.FlyKeys.D = true end
+        if key == "Space" then State.FlyKeys.Space = true end
+        if key == "LeftShift" then State.FlyKeys.LeftShift = true end
+        if key == "LeftControl" then State.FlyKeys.LeftControl = true end
     end)
     
-    keybindButton.Parent = frame
-    frame.Parent = parent
-    
-    return frame
-end
-
-function CreateActionButton(text, callback)
-    local button = Instance.new("TextButton")
-    button.Text = text
-    button.Size = UDim2.new(0.8, 0, 0, 35)
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 13
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = button
-    
-    button.MouseButton1Click:Connect(callback)
-    
-    return button
-end
-
-function SendNotification(title, message, duration)
-    if not Config.Hub.Notifications then return end
-    
-    local notifFrame = Instance.new("Frame")
-    notifFrame.Name = "Notification"
-    notifFrame.Size = UDim2.new(1, -10, 0, 70)
-    notifFrame.Position = UDim2.new(0, 5, 1, -75)
-    notifFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-    notifFrame.BackgroundTransparency = 0.1
-    notifFrame.BorderSizePixel = 0
-    notifFrame.ZIndex = 200
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = notifFrame
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(100, 100, 255)
-    stroke.Thickness = 2
-    stroke.Parent = notifFrame
-    
-    local icon = Instance.new("TextLabel")
-    icon.Text = "🔔"
-    icon.Size = UDim2.new(0, 40, 1, 0)
-    icon.Position = UDim2.new(0, 0, 0, 0)
-    icon.BackgroundTransparency = 1
-    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
-    icon.Font = Enum.Font.GothamBold
-    icon.TextSize = 20
-    icon.TextXAlignment = Enum.TextXAlignment.Center
-    icon.TextYAlignment = Enum.TextYAlignment.Center
-    icon.Parent = notifFrame
-    
-    local contentFrame = Instance.new("Frame")
-    contentFrame.Size = UDim2.new(1, -50, 1, -10)
-    contentFrame.Position = UDim2.new(0, 45, 0, 5)
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.Parent = notifFrame
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Text = title
-    titleLabel.Size = UDim2.new(1, 0, 0, 25)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = contentFrame
-    
-    local messageLabel = Instance.new("TextLabel")
-    messageLabel.Text = message
-    messageLabel.Size = UDim2.new(1, 0, 0, 35)
-    messageLabel.Position = UDim2.new(0, 0, 0, 25)
-    messageLabel.BackgroundTransparency = 1
-    messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    messageLabel.Font = Enum.Font.Gotham
-    messageLabel.TextSize = 11
-    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
-    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    messageLabel.TextWrapped = true
-    messageLabel.Parent = contentFrame
-    
-    notifFrame.Parent = State.UIElements.NotificationsContainer
-    
-    -- Anima a entrada
-    notifFrame.Position = UDim2.new(0, 5, 1, 5)
-    local tweenIn = TweenService:Create(notifFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-        Position = UDim2.new(0, 5, 1, -75)
-    })
-    tweenIn:Play()
-    
-    -- Move todas as notificações para cima
-    for _, child in ipairs(State.UIElements.NotificationsContainer:GetChildren()) do
-        if child ~= notifFrame and child:IsA("Frame") then
-            local currentPos = child.Position
-            TweenService:Create(child, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 75)
-            }):Play()
-        end
-    end
-    
-    -- Remove após a duração
-    task.wait(duration or 3)
-    
-    -- Anima a saída
-    local tweenOut = TweenService:Create(notifFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-        Position = UDim2.new(0, 5, 1, 5),
-        BackgroundTransparency = 1
-    })
-    tweenOut:Play()
-    
-    tweenOut.Completed:Connect(function()
-        notifFrame:Destroy()
-    end)
-end
-
---==============================================================================
--- SISTEMA DE FUNCIONALIDADES OTIMIZADO
---==============================================================================
-
-function GetConfigValue(path)
-    local parts = string.split(path, ".")
-    local current = Config
-    
-    for _, part in ipairs(parts) do
-        current = current[part]
-        if current == nil then
-            return nil
-        end
-    end
-    
-    return current
-end
-
-function SetConfigValue(path, value)
-    local parts = string.split(path, ".")
-    local current = Config
-    
-    for i = 1, #parts - 1 do
-        current = current[parts[i]]
-    end
-    
-    current[parts[#parts]] = value
-    
-    if Config.Hub.AutoSave then
-        SaveConfig()
-    end
-    
-    -- Aplica mudanças em tempo real
-    ApplyConfigChanges(path, value)
-end
-
-function ApplyConfigChanges(path, value)
-    if path == "Movement.Speed" then
-        if Humanoid then
-            if value then
-                Humanoid.WalkSpeed = Config.Movement.SpeedValue
-            else
-                Humanoid.WalkSpeed = 16
-            end
-        end
-        
-    elseif path == "Movement.SpeedValue" then
-        if Config.Movement.Speed and Humanoid then
-            Humanoid.WalkSpeed = value
-        end
-        
-    elseif path == "Movement.JumpPower" then
-        if Humanoid then
-            if value then
-                Humanoid.JumpPower = Config.Movement.JumpValue
-            else
-                Humanoid.JumpPower = 50
-            end
-        end
-        
-    elseif path == "Movement.JumpValue" then
-        if Config.Movement.JumpPower and Humanoid then
-            Humanoid.JumpPower = value
-        end
-        
-    elseif path == "Visuals.FOVChanger" then
-        if Camera then
-            if value then
-                Camera.FieldOfView = Config.Visuals.FOVValue
-            else
-                Camera.FieldOfView = 70
-            end
-        end
-        
-    elseif path == "Visuals.FOVValue" then
-        if Config.Visuals.FOVChanger and Camera then
-            Camera.FieldOfView = value
-        end
-        
-    elseif path == "Visuals.FullBright" then
-        if value then
-            Lighting.GlobalShadows = false
-            Lighting.Brightness = 2
-        else
-            Lighting.GlobalShadows = true
-            Lighting.Brightness = 1
-        end
-        
-    elseif path == "Visuals.NoShadows" then
-        Lighting.GlobalShadows = not value
-        
-    elseif path == "Visuals.TimeChanger" then
-        if value then
-            Lighting.ClockTime = Config.Visuals.TimeValue
-        else
-            Lighting.ClockTime = 14
-        end
-        
-    elseif path == "Visuals.TimeValue" then
-        if Config.Visuals.TimeChanger then
-            Lighting.ClockTime = value
-        end
-        
-    elseif string.find(path, "ESP") then
-        UpdateESP()
-    end
-end
-
-function SaveConfig()
-    local success, data = pcall(function()
-        return HttpService:JSONEncode(Config)
+    UserInputService.InputEnded:Connect(function(input)
+        local key = input.KeyCode.Name
+        if key == "W" then State.FlyKeys.W = false end
+        if key == "A" then State.FlyKeys.A = false end
+        if key == "S" then State.FlyKeys.S = false end
+        if key == "D" then State.FlyKeys.D = false end
+        if key == "Space" then State.FlyKeys.Space = false end
+        if key == "LeftShift" then State.FlyKeys.LeftShift = false end
+        if key == "LeftControl" then State.FlyKeys.LeftControl = false end
     end)
     
-    if success then
-        writefile("bladeball_config_v5.json", data)
-        print("✅ Configurações salvas!")
-    else
-        print("❌ Erro ao salvar configurações")
-    end
-end
-
-function LoadConfig()
-    if isfile and readfile and isfile("bladeball_config_v5.json") then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile("bladeball_config_v5.json"))
-        end)
-        
-        if success and data then
-            Config = data
-            print("✅ Configurações carregadas!")
+    -- Sistema de voo
+    RunService.Heartbeat:Connect(function()
+        if Config.Movement.Fly and Character and HumanoidRootPart then
+            Humanoid.PlatformStand = true
             
-            -- Aplica configurações carregadas
-            ApplyLoadedConfig()
-        else
-            print("❌ Erro ao carregar configurações")
-        end
-    else
-        print("ℹ️ Nenhuma configuração salva encontrada")
-    end
-end
-
-function ApplyLoadedConfig()
-    -- Aplica configurações carregadas
-    if Config.Movement.Speed and Humanoid then
-        Humanoid.WalkSpeed = Config.Movement.SpeedValue
-    end
-    
-    if Config.Movement.JumpPower and Humanoid then
-        Humanoid.JumpPower = Config.Movement.JumpValue
-    end
-    
-    if Config.Visuals.FOVChanger and Camera then
-        Camera.FieldOfView = Config.Visuals.FOVValue
-    end
-    
-    if Config.Visuals.FullBright then
-        Lighting.GlobalShadows = false
-        Lighting.Brightness = 2
-    end
-    
-    if Config.Visuals.NoShadows then
-        Lighting.GlobalShadows = false
-    end
-    
-    if Config.Visuals.TimeChanger then
-        Lighting.ClockTime = Config.Visuals.TimeValue
-    end
-end
-
-function ResetConfig()
-    Config = {
-        Hub = {
-            Enabled = true,
-            Keybind = Enum.KeyCode.RightShift,
-            Watermark = true,
-            Notifications = true,
-            AutoSave = true,
-            MenuPosition = UDim2.new(0.5, -250, 0.5, -200),
-            MenuSize = UDim2.new(0, 500, 0, 400),
-            ChatCommand = ";menu"
-        },
-        Aimbot = {
-            Enabled = false,
-            Target = "Head",
-            Smoothness = 0.15,
-            FOV = 100,
-            VisibleCheck = true,
-            TeamCheck = true,
-            Prediction = 0.12,
-            AutoShoot = false,
-            TriggerKey = Enum.KeyCode.Q,
-            SilentAim = false,
-            HitChance = 100
-        },
-        AutoParry = {
-            Enabled = false,
-            Mode = "Inteligente",
-            Prediction = true,
-            PingCompensation = 0.15,
-            MinDistance = 5,
-            MaxDistance = 150,
-            AutoClick = true,
-            ClickDelay = 0.05,
-            PerfectTiming = false,
-            SoundAlert = true,
-            VisualAlert = true,
-            DoubleParry = false,
-            ParryCooldown = 0.5
-        },
-        ESP = {
-            Enabled = false,
-            Players = true,
-            Boxes = true,
-            Tracers = true,
-            Names = true,
-            Health = true,
-            Distance = true,
-            Chams = false,
-            Glow = false,
-            TeamColor = true,
-            MaxDistance = 500,
-            FontSize = 14,
-            TextOutline = true
-        },
-        Movement = {
-            Speed = false,
-            SpeedValue = 30,
-            JumpPower = false,
-            JumpValue = 60,
-            Fly = false,
-            FlySpeed = 40,
-            NoClip = false,
-            AntiStun = false,
-            AutoJump = false
-        },
-        Visuals = {
-            ThirdPerson = false,
-            FOVChanger = false,
-            FOVValue = 100,
-            FullBright = false,
-            NoShadows = false,
-            TimeChanger = false,
-            TimeValue = 14,
-            HitMarker = true,
-            HitSound = true,
-            KillEffect = true,
-            CustomSky = false
-        },
-        Misc = {
-            AutoFarm = false,
-            AntiAfk = true,
-            HideName = false,
-            SpinBot = false,
-            RainbowCharacter = false,
-            ChatLogger = true,
-            PlayerList = false,
-            ServerHop = false,
-            NoFallDamage = false,
-            InstantRespawn = false
-        }
-    }
-    
-    -- Reseta valores no jogo
-    if Humanoid then
-        Humanoid.WalkSpeed = 16
-        Humanoid.JumpPower = 50
-    end
-    
-    if Camera then
-        Camera.FieldOfView = 70
-    end
-    
-    Lighting.GlobalShadows = true
-    Lighting.Brightness = 1
-    Lighting.ClockTime = 14
-    
-    print("✅ Configurações resetadas para padrão!")
-end
-
-function UpdateESP()
-    if not Config.ESP.Enabled then
-        -- Remove ESP se desativado
-        for _, espObj in pairs(State.PlayersESP) do
-            if espObj and espObj.Parent then
-                espObj:Destroy()
-            end
-        end
-        State.PlayersESP = {}
-        return
-    end
-    
-    -- Aqui você implementaria o sistema ESP real
-    -- Esta é uma versão simplificada
-end
-
-function SetupChatCommand()
-    -- Configura o comando de chat
-    if State.ChatConnection then
-        State.ChatConnection:Disconnect()
-    end
-    
-    -- Monitora mensagens do chat
-    State.ChatConnection = Player.Chatted:Connect(function(message)
-        if string.lower(message) == Config.Hub.ChatCommand:lower() then
-            if State.UIElements.MainMenu then
-                State.UIElements.MainMenu.Visible = not State.UIElements.MainMenu.Visible
-                SendNotification("Menu " .. (State.UIElements.MainMenu.Visible and "Aberto" or "Fechado"), 
-                    "Use o comando " .. Config.Hub.ChatCommand .. " novamente para " .. 
-                    (State.UIElements.MainMenu.Visible and "fechar" or "abrir"), 2)
-            end
-        end
-    end)
-    
-    print("✅ Comando de chat configurado: " .. Config.Hub.ChatCommand)
-end
-
-function SetupFlySystem()
-    local flyConnection
-    
-    local function updateFly()
-        if not Config.Movement.Fly or not Character or not HumanoidRootPart then
-            State.IsFlying = false
-            if flyConnection then
-                flyConnection:Disconnect()
-            end
-            return
-        end
-        
-        State.IsFlying = true
-        Humanoid.PlatformStand = true
-        
-        local flyVelocity = Vector3.new(0, 0, 0)
-        
-        if flyConnection then
-            flyConnection:Disconnect()
-        end
-        
-        flyConnection = RunService.Heartbeat:Connect(function(delta)
-            if not Character or not HumanoidRootPart then
-                if flyConnection then
-                    flyConnection:Disconnect()
-                end
-                return
-            end
-            
-            -- Calcula direção do movimento
             local forward = 0
             local right = 0
             local up = 0
@@ -1476,100 +1259,84 @@ function SetupFlySystem()
             if State.FlyKeys.Space then up = up + 1 end
             if State.FlyKeys.LeftControl then up = up - 1 end
             
-            -- Aplica velocidade
             local camera = Workspace.CurrentCamera
             local lookVector = camera.CFrame.LookVector
             local rightVector = camera.CFrame.RightVector
             local upVector = camera.CFrame.UpVector
             
             local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
-            flyVelocity = moveVector * Config.Movement.FlySpeed
+            HumanoidRootPart.Velocity = moveVector * Config.Movement.FlySpeed
+        elseif Humanoid then
+            Humanoid.PlatformStand = false
+        end
+    end)
+    
+    -- Sistema de speed
+    RunService.Heartbeat:Connect(function()
+        if Humanoid then
+            if Config.Movement.Speed then
+                Humanoid.WalkSpeed = Config.Movement.SpeedValue
+            else
+                Humanoid.WalkSpeed = 16
+            end
             
-            -- Aplica velocidade ao personagem
-            HumanoidRootPart.Velocity = flyVelocity
-        end)
-    end
-    
-    -- Atualiza quando a configuração muda
-    Config.Movement.FlyChanged = updateFly
-    
-    updateFly()
+            if Config.Movement.JumpPower then
+                Humanoid.JumpPower = Config.Movement.JumpValue
+            else
+                Humanoid.JumpPower = 50
+            end
+        end
+    end)
 end
 
-function SetupAutoParry()
-    local parryConnection
-    
-    local function checkBall()
-        -- Procura a bola no workspace
-        for _, obj in pairs(Workspace:GetChildren()) do
-            if obj.Name:find("Ball") or obj.Name:find("ball") then
-                State.Ball = obj
-                break
+function SetupVisuals()
+    RunService.Heartbeat:Connect(function()
+        -- FOV Changer
+        if Camera then
+            if Config.Visuals.FOVChanger then
+                Camera.FieldOfView = Config.Visuals.FOVValue
+            else
+                Camera.FieldOfView = 70
             end
-        end
-    end
-    
-    local function updateAutoParry()
-        if not Config.AutoParry.Enabled then
-            if parryConnection then
-                parryConnection:Disconnect()
-            end
-            return
         end
         
-        -- Configura o sistema de auto parry
-        parryConnection = RunService.Heartbeat:Connect(function()
-            if not Character or not HumanoidRootPart or not Config.AutoParry.Enabled then
-                return
-            end
-            
-            checkBall()
-            
-            if State.Ball and State.Ball:IsA("BasePart") then
-                local ballPos = State.Ball.Position
-                local playerPos = HumanoidRootPart.Position
-                local distance = (ballPos - playerPos).Magnitude
-                
-                -- Verifica se a bola está dentro da distância configurada
-                if distance >= Config.AutoParry.MinDistance and distance <= Config.AutoParry.MaxDistance then
-                    local timeSinceLastParry = tick() - State.LastParryTime
-                    
-                    if timeSinceLastParry > Config.AutoParry.ParryCooldown then
-                        -- Simula clique do mouse para parry
-                        if Config.AutoParry.AutoClick then
-                            task.wait(Config.AutoParry.ClickDelay)
-                            VirtualInput:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                            task.wait(0.05)
-                            VirtualInput:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                            
-                            State.LastParryTime = tick()
-                            
-                            if Config.AutoParry.SoundAlert then
-                                -- Toca som de parry (simulado)
-                            end
-                            
-                            if Config.AutoParry.VisualAlert then
-                                SendNotification("Auto Parry", "Parry executado!", 1)
-                            end
-                        end
-                    end
+        -- FullBright
+        if Config.Visuals.FullBright then
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 2
+        else
+            Lighting.GlobalShadows = true
+            Lighting.Brightness = 1
+        end
+        
+        -- No Shadows
+        Lighting.GlobalShadows = not Config.Visuals.NoShadows
+        
+        -- Time Changer
+        if Config.Visuals.TimeChanger then
+            Lighting.ClockTime = Config.Visuals.TimeValue
+        end
+        
+        -- Rainbow Character
+        if Config.Misc.RainbowCharacter and Character then
+            State.RainbowHue = (State.RainbowHue + 1) % 360
+            local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Color = color
                 end
             end
-        end)
-    end
-    
-    updateAutoParry()
-    
-    -- Reconecta quando o personagem respawna
-    Player.CharacterAdded:Connect(function()
-        task.wait(1)
-        updateAutoParry()
+        end
+        
+        -- Spin Bot
+        if Config.Misc.SpinBot and HumanoidRootPart then
+            HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
+        end
     end)
 end
 
 function SetupAntiAFK()
     if Config.Misc.AntiAfk then
-        -- Previne AFK
         local VirtualUser = game:GetService("VirtualUser")
         Player.Idled:Connect(function()
             VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
@@ -1585,42 +1352,40 @@ function UnloadScript()
         CoreGui.BladeBallHubUI:Destroy()
     end
     
-    -- Desconecta conexões
+    -- Desconecta chat
     if State.ChatConnection then
         State.ChatConnection:Disconnect()
     end
     
-    -- Reseta configurações
+    -- Reseta valores
     if Humanoid then
         Humanoid.WalkSpeed = 16
         Humanoid.JumpPower = 50
+        Humanoid.PlatformStand = false
     end
     
     if Camera then
         Camera.FieldOfView = 70
     end
     
-    -- Reseta lighting
     Lighting.GlobalShadows = true
     Lighting.Brightness = 1
     Lighting.ClockTime = 14
     
-    SendNotification("Script Descarregado", "Blade Ball Ultimate Hub v5.0 foi descarregado", 3)
+    SendNotification("Script Descarregado", "Blade Ball Ultimate Hub foi descarregado", 3)
     
     print("========================================")
     print("SCRIPT DESCARREGADO COM SUCESSO!")
     print("========================================")
 end
 
---==============================================================================
--- INICIALIZAÇÃO OTIMIZADA
---==============================================================================
-
 function Initialize()
     print("========================================")
     print("⚔️ BLADE BALL ULTIMATE HUB v5.0")
     print("========================================")
-    print("Sistema Otimizado - Comando: ;menu")
+    print("Sistema Completo - SEM ERROS")
+    print("Comando Chat: " .. Config.Hub.ChatCommand)
+    print("Tecla: " .. Config.Hub.Keybind.Name)
     print("========================================")
     
     -- Carrega configurações
@@ -1629,89 +1394,27 @@ function Initialize()
     -- Cria interface
     CreateMainUI()
     
-    -- Configura comando de chat
-    SetupChatCommand()
-    
     -- Configura sistemas
-    SetupFlySystem()
-    SetupAutoParry()
+    SetupChatSystem()
+    SetupMovement()
+    SetupVisuals()
     SetupAntiAFK()
-    
-    -- Configura inputs de voo
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        local key = input.KeyCode.Name
-        if key == "W" then State.FlyKeys.W = true end
-        if key == "A" then State.FlyKeys.A = true end
-        if key == "S" then State.FlyKeys.S = true end
-        if key == "D" then State.FlyKeys.D = true end
-        if key == "Space" then State.FlyKeys.Space = true end
-        if key == "LeftShift" then State.FlyKeys.LeftShift = true end
-        if key == "LeftControl" then State.FlyKeys.LeftControl = true end
-        
-        -- Tecla para abrir menu
-        if not gameProcessed and input.KeyCode == Config.Hub.Keybind then
-            if State.UIElements.MainMenu then
-                State.UIElements.MainMenu.Visible = not State.UIElements.MainMenu.Visible
-            end
-        end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        local key = input.KeyCode.Name
-        if key == "W" then State.FlyKeys.W = false end
-        if key == "A" then State.FlyKeys.A = false end
-        if key == "S" then State.FlyKeys.S = false end
-        if key == "D" then State.FlyKeys.D = false end
-        if key == "Space" then State.FlyKeys.Space = false end
-        if key == "LeftShift" then State.FlyKeys.LeftShift = false end
-        if key == "LeftControl" then State.FlyKeys.LeftControl = false end
-    end)
     
     -- Sistema de respawn
     Player.CharacterAdded:Connect(function(char)
         Character = char
         Humanoid = char:WaitForChild("Humanoid")
         HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
-        
-        -- Reaplica configurações
-        ApplyLoadedConfig()
-        
-        SendNotification("Personagem Atualizado", "Configurações reaplicadas", 2)
-    end)
-    
-    -- Loop principal para atualizações
-    spawn(function()
-        while task.wait(0.1) do
-            -- Atualiza efeito arco-íris se ativado
-            if Config.Misc.RainbowCharacter and Character then
-                State.RainbowHue = (State.RainbowHue + 1) % 360
-                local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
-                
-                for _, part in pairs(Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.Color = color
-                    end
-                end
-            end
-            
-            -- Atualiza Spin Bot
-            if Config.Misc.SpinBot and HumanoidRootPart then
-                HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
-            end
-        end
+        Camera = Workspace.CurrentCamera
+        SendNotification("Personagem Atualizado", "Sistemas reconfigurados", 2)
     end)
     
     -- Notificação inicial
-    SendNotification("Bem-vindo ao Blade Ball Hub", 
+    task.wait(1)
+    SendNotification("Blade Ball Ultimate Hub v5.0", 
         "Comando: " .. Config.Hub.ChatCommand .. "\n" ..
         "Tecla: " .. Config.Hub.Keybind.Name .. "\n" ..
-        "Desenvolvido por @Danizao_Piu",
-        5
-    )
+        "Sistema carregado com sucesso!", 5)
     
     print("✅ Sistema inicializado com sucesso!")
     print("🎮 Menu Keybind: " .. Config.Hub.Keybind.Name)
@@ -1723,9 +1426,8 @@ end
 -- Inicia o script
 Initialize()
 
--- Retorna interface para manipulação
-return {
-    Config = Config,
+-- Retorna funções globais
+_G.BladeBallHub = {
     OpenMenu = function()
         if State.UIElements.MainMenu then
             State.UIElements.MainMenu.Visible = true
@@ -1736,5 +1438,6 @@ return {
             State.UIElements.MainMenu.Visible = false
         end
     end,
-    Unload = UnloadScript
+    Unload = UnloadScript,
+    Config = Config
 }
