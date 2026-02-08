@@ -1,4 +1,4 @@
--- Código SUPER SIMPLES que funciona
+-- Código SUPER SIMPLES que funcionaa
 local Player = game:GetService("Players").LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
