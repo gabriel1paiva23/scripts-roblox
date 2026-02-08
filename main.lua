@@ -1,8 +1,7 @@
 --==============================================================================
--- BLADE BALL ULTIMATE HUB v6.0 - VERSÃO COMPLETA UNIVERSAL
--- Compatível com todos os jogos Roblox
--- Comando: ;menu - CONFIRMADO FUNCIONANDO
--- Tecla: RightShift ou M
+-- BLADE BALL ULTIMATE HUB v6.0 - SCRIPT PRINCIPAL
+-- Hospedado em: https://raw.githubusercontent.com/gabriel1paiva23/scripts-roblox/refs/heads/main/main.lua
+-- Comando: ;menu | Tecla: RightShift/M
 --==============================================================================
 
 -- Services
@@ -141,8 +140,8 @@ local OriginalSettings = {
     Ambient = Lighting.Ambient
 }
 
-print("⚔️ BLADE BALL ULTIMATE HUB v6.0 UNIVERSAL INICIANDO...")
-print("📱 Aguarde a inicialização do sistema...")
+print("⚔️ BLADE BALL ULTIMATE HUB v6.0 CARREGADO DO GITHUB!")
+print("📱 Sistema inicializando...")
 
 --==============================================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -154,11 +153,6 @@ function IsAlive(player)
     if not char then return false end
     local humanoid = char:FindFirstChild("Humanoid")
     return humanoid and humanoid.Health > 0
-end
-
-function IsOnScreen(position)
-    local screenPoint, onScreen = Camera:WorldToViewportPoint(position)
-    return onScreen
 end
 
 function CalculateDistance(pos1, pos2)
@@ -283,109 +277,6 @@ function Aimbot:Update()
 end
 
 --==============================================================================
--- SISTEMA DE SILENT AIM
---==============================================================================
-
-local SilentAim = {}
-
-function SilentAim:GetClosestTarget()
-    if not Config.Combat.SilentAim then return nil end
-    
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    local mousePos = UserInputService:GetMouseLocation()
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Player and IsAlive(player) then
-            if Config.Aimbot.TeamCheck and player.Team == Player.Team then
-                continue
-            end
-            
-            local character = player.Character
-            if character then
-                local aimPart = character:FindFirstChild(Config.Aimbot.AimPart) or character.HumanoidRootPart
-                if aimPart then
-                    local screenPoint = Camera:WorldToViewportPoint(aimPart.Position)
-                    local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
-                    
-                    if distanceFromCenter < shortestDistance and distanceFromCenter <= Config.Aimbot.FOV then
-                        shortestDistance = distanceFromCenter
-                        closestPlayer = player
-                    end
-                end
-            end
-        end
-    end
-    
-    return closestPlayer
-end
-
--- Hook para metatables (Silent Aim)
-local mt = getrawmetatable(game)
-local oldNamecall = mt.__namecall
-local oldIndex = mt.__index
-
-setreadonly(mt, false)
-
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    -- Silent Aim para FindPartOnRay
-    if method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" then
-        if Config.Combat.SilentAim and math.random(1, 100) <= Config.Combat.HitChance then
-            local target = SilentAim:GetClosestTarget()
-            if target and target.Character then
-                local aimPart = target.Character:FindFirstChild(Config.Aimbot.AimPart) or target.Character.HumanoidRootPart
-                if aimPart then
-                    local origin = args[1].Origin
-                    local direction = (aimPart.Position - origin).Unit * 1000
-                    args[1] = Ray.new(origin, direction)
-                end
-            end
-        end
-    end
-    
-    -- Wallbang
-    if Config.Combat.Wallbang and (method == "FindPartOnRay" or method == "Raycast") then
-        local ray = args[1]
-        if ray and typeof(ray) == "Ray" then
-            local ignoreList = args[2] or {}
-            if typeof(ignoreList) ~= "table" then
-                ignoreList = {ignoreList}
-            end
-            
-            -- Adiciona todas as partes para wallbang
-            for _, part in pairs(Workspace:GetDescendants()) do
-                if part:IsA("BasePart") and not part:IsDescendantOf(Character) then
-                    table.insert(ignoreList, part)
-                end
-            end
-            
-            args[2] = ignoreList
-        end
-    end
-    
-    return oldNamecall(self, unpack(args))
-end)
-
--- Hitbox Expander
-mt.__index = newcclosure(function(self, key)
-    if key == "Size" and Config.Misc.HitboxExpander then
-        if self:IsA("BasePart") and self.Parent and self.Parent:IsA("Model") then
-            local player = Players:GetPlayerFromCharacter(self.Parent)
-            if player and player ~= Player then
-                return oldIndex(self, key) * Config.Misc.HitboxSize
-            end
-        end
-    end
-    
-    return oldIndex(self, key)
-end)
-
-setreadonly(mt, true)
-
---==============================================================================
 -- SISTEMA DE ESP
 --==============================================================================
 
@@ -459,16 +350,6 @@ function ESP:Create(player)
         espObject.Health.TextSize = 11
         espObject.Health.ZIndex = 11
         espObject.Health.Parent = State.ScreenGui
-    end
-    
-    -- Chams
-    if Config.ESP.Chams then
-        espObject.Chams = Instance.new("Highlight")
-        espObject.Chams.Name = "ESPChams"
-        espObject.Chams.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        espObject.Chams.FillTransparency = 0.5
-        espObject.Chams.OutlineTransparency = 0
-        espObject.Chams.Parent = player.Character or player.CharacterAdded:Wait()
     end
 end
 
@@ -547,14 +428,6 @@ function ESP:Update(player)
             espObject.Health.Visible = true
         end
     end
-    
-    -- Chams
-    if espObject.Chams and Config.ESP.Chams then
-        espObject.Chams.Adornee = character
-        espObject.Chams.FillColor = color
-        espObject.Chams.OutlineColor = color
-        espObject.Chams.Enabled = true
-    end
 end
 
 function ESP:Show(player)
@@ -564,8 +437,6 @@ function ESP:Show(player)
     for _, obj in pairs(espObject) do
         if obj and obj:IsA("GuiObject") then
             obj.Visible = true
-        elseif obj and obj:IsA("Highlight") then
-            obj.Enabled = true
         end
     end
 end
@@ -577,8 +448,6 @@ function ESP:Hide(player)
     for _, obj in pairs(espObject) do
         if obj and obj:IsA("GuiObject") then
             obj.Visible = false
-        elseif obj and obj:IsA("Highlight") then
-            obj.Enabled = false
         end
     end
 end
@@ -619,18 +488,12 @@ end
 local AutoParry = {}
 
 function AutoParry:CheckBall()
-    -- Esta função precisa ser adaptada para o jogo específico
-    -- Exemplo genérico para Blade Ball
     for _, part in pairs(Workspace:GetChildren()) do
         if part.Name:lower():find("ball") or part.Name:lower():find("sphere") then
             local distance = CalculateDistance(HumanoidRootPart.Position, part.Position)
-            if distance < 20 then -- Distância para parry
+            if distance < 20 then
                 if Config.AutoParry.VisualAlert then
                     ShowNotification("⚡ PARRY!", "Bola detectada próxima!", 1)
-                end
-                
-                if Config.AutoParry.SoundAlert then
-                    -- Tocar som (opcional)
                 end
                 
                 if Config.AutoParry.AutoClick then
@@ -648,26 +511,6 @@ function AutoParry:CheckBall()
 end
 
 --==============================================================================
--- SISTEMA DE AUTOFARM
---==============================================================================
-
-local AutoFarm = {}
-
-function AutoFarm:CollectItems()
-    if not Config.Misc.AutoCollect then return end
-    
-    for _, item in pairs(Workspace:GetDescendants()) do
-        if item:IsA("BasePart") and (item.Name:lower():find("coin") or item.Name:lower():find("gem") or item.Name:lower():find("item")) then
-            local distance = CalculateDistance(HumanoidRootPart.Position, item.Position)
-            if distance < 50 then
-                HumanoidRootPart.CFrame = CFrame.new(item.Position)
-                task.wait(0.1)
-            end
-        end
-    end
-end
-
---==============================================================================
 -- SISTEMA DE AUTOCLICKER
 --==============================================================================
 
@@ -676,12 +519,8 @@ local AutoClicker = {}
 function AutoClicker:Start()
     State.AutoClickerActive = true
     while State.AutoClickerActive and Config.Misc.AutoClicker do
-        if Config.Misc.AutoClicker then
-            CreateClick()
-            task.wait(1 / Config.Misc.ClickSpeed)
-        else
-            break
-        end
+        CreateClick()
+        task.wait(1 / Config.Misc.ClickSpeed)
     end
 end
 
@@ -748,10 +587,7 @@ function Combat:KillAura()
                 if humanoidRootPart then
                     local distance = CalculateDistance(HumanoidRootPart.Position, humanoidRootPart.Position)
                     if distance <= Config.Combat.KillAuraRange then
-                        -- Simula ataque (adaptar para o jogo)
-                        if character:FindFirstChild("Humanoid") then
-                            CreateClick()
-                        end
+                        CreateClick()
                     end
                 end
             end
@@ -783,7 +619,6 @@ local ServerHop = {}
 function ServerHop:Execute()
     if not Config.Misc.ServerHop then return end
     
-    local HttpService = game:GetService("HttpService")
     local TeleportService = game:GetService("TeleportService")
     
     local servers = {}
@@ -805,7 +640,7 @@ function ServerHop:Execute()
 end
 
 --==============================================================================
--- INTERFACE COMPLETA COM CONTROLES
+-- INTERFACE COMPLETA
 --==============================================================================
 
 function CreateUI()
@@ -855,7 +690,7 @@ function CreateUI()
     title.Parent = watermark
     
     local subtitle = Instance.new("TextLabel")
-    subtitle.Text = "UNIVERSAL | ;menu | RightShift/M"
+    subtitle.Text = "GITHUB EDITION | ;menu | RightShift/M"
     subtitle.Size = UDim2.new(1, -10, 0, 20)
     subtitle.Position = UDim2.new(0, 10, 0, 28)
     subtitle.BackgroundTransparency = 1
@@ -899,7 +734,7 @@ function CreateUI()
     titleBarCorner.Parent = titleBar
     
     local menuTitle = Instance.new("TextLabel")
-    menuTitle.Text = "BLADE BALL ULTIMATE HUB v6.0 (UNIVERSAL)"
+    menuTitle.Text = "BLADE BALL ULTIMATE HUB (GITHUB)"
     menuTitle.Size = UDim2.new(1, -50, 1, 0)
     menuTitle.Position = UDim2.new(0, 15, 0, 0)
     menuTitle.BackgroundTransparency = 1
@@ -1014,6 +849,18 @@ function CreateUI()
                 else
                     AutoClicker:Stop()
                 end
+            elseif configKey == "ESP" then
+                if Config[configCategory][configKey] then
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= Player then
+                            ESP:Create(player)
+                        end
+                    end
+                else
+                    for player, _ in pairs(State.ESPObjects) do
+                        ESP:Remove(player)
+                    end
+                end
             end
             
             ShowNotification(name, "Definido para: " .. toggleButton.Text, 2)
@@ -1124,9 +971,6 @@ function CreateUI()
             local aimbotToggle = CreateToggle("Aimbot", "Aimbot", "Enabled", false)
             aimbotToggle.Parent = contentFrame
             
-            local silentAimToggle = CreateToggle("Silent Aim", "Combat", "SilentAim", false)
-            silentAimToggle.Parent = contentFrame
-            
             local autoShootToggle = CreateToggle("Auto Shoot", "Aimbot", "AutoShoot", false)
             autoShootToggle.Parent = contentFrame
             
@@ -1141,12 +985,6 @@ function CreateUI()
             
             local smoothnessSlider = CreateSlider("Smoothness", "Aimbot", "Smoothness", 0, 1, 0.2)
             smoothnessSlider.Parent = contentFrame
-            
-            local predictionSlider = CreateSlider("Prediction", "Aimbot", "Prediction", 0, 1, 0.1)
-            predictionSlider.Parent = contentFrame
-            
-            local hitChanceSlider = CreateSlider("Hit Chance", "Combat", "HitChance", 0, 100, 100)
-            hitChanceSlider.Parent = contentFrame
         end},
         
         {Name = "AutoParry", Icon = "🛡️", Content = function()
@@ -1161,14 +999,8 @@ function CreateUI()
             local visualAlertToggle = CreateToggle("Visual Alert", "AutoParry", "VisualAlert", true)
             visualAlertToggle.Parent = contentFrame
             
-            local soundAlertToggle = CreateToggle("Sound Alert", "AutoParry", "SoundAlert", true)
-            soundAlertToggle.Parent = contentFrame
-            
             local parryDelaySlider = CreateSlider("Parry Delay", "AutoParry", "ParryDelay", 0, 1, 0.1)
             parryDelaySlider.Parent = contentFrame
-            
-            local predictionSlider = CreateSlider("Prediction", "AutoParry", "Prediction", 0, 1, 0.2)
-            predictionSlider.Parent = contentFrame
         end},
         
         {Name = "ESP", Icon = "👁️", Content = function()
@@ -1191,15 +1023,6 @@ function CreateUI()
             
             local healthToggle = CreateToggle("Health", "ESP", "Health", true)
             healthToggle.Parent = contentFrame
-            
-            local teamColorToggle = CreateToggle("Team Color", "ESP", "TeamColor", true)
-            teamColorToggle.Parent = contentFrame
-            
-            local chamsToggle = CreateToggle("Chams", "ESP", "Chams", false)
-            chamsToggle.Parent = contentFrame
-            
-            local outlineToggle = CreateToggle("Outline", "ESP", "Outline", true)
-            outlineToggle.Parent = contentFrame
             
             local maxDistanceSlider = CreateSlider("Max Distance", "ESP", "MaxDistance", 100, 5000, 1000)
             maxDistanceSlider.Parent = contentFrame
@@ -1251,63 +1074,11 @@ function CreateUI()
             local noShadowsToggle = CreateToggle("No Shadows", "Visuals", "NoShadows", false)
             noShadowsToggle.Parent = contentFrame
             
-            local ambientToggle = CreateToggle("Ambient Lighting", "Visuals", "AmbientLighting", false)
-            ambientToggle.Parent = contentFrame
-            
-            local removeEffectsToggle = CreateToggle("Remove Effects", "Visuals", "RemoveEffects", false)
-            removeEffectsToggle.Parent = contentFrame
-            
-            local removeParticlesToggle = CreateToggle("Remove Particles", "Visuals", "RemoveParticles", false)
-            removeParticlesToggle.Parent = contentFrame
-            
-            local timeChangerToggle = CreateToggle("Time Changer", "Visuals", "TimeChanger", false)
-            timeChangerToggle.Parent = contentFrame
-            
-            local timeSlider = CreateSlider("Time Value", "Visuals", "TimeValue", 0, 24, 12)
-            timeSlider.Parent = contentFrame
-            
             local rainbowCharToggle = CreateToggle("Rainbow Character", "Misc", "RainbowCharacter", false)
             rainbowCharToggle.Parent = contentFrame
             
             local spinbotToggle = CreateToggle("Spin Bot", "Misc", "SpinBot", false)
             spinbotToggle.Parent = contentFrame
-        end},
-        
-        {Name = "Combat", Icon = "⚔️", Content = function()
-            contentFrame:ClearAllChildren()
-            
-            local killAuraToggle = CreateToggle("Kill Aura", "Combat", "KillAura", false)
-            killAuraToggle.Parent = contentFrame
-            
-            local killAuraSlider = CreateSlider("Kill Aura Range", "Combat", "KillAuraRange", 5, 100, 20)
-            killAuraSlider.Parent = contentFrame
-            
-            local wallbangToggle = CreateToggle("Wallbang", "Combat", "Wallbang", false)
-            wallbangToggle.Parent = contentFrame
-            
-            local autoBlockToggle = CreateToggle("Auto Block", "Combat", "AutoBlock", false)
-            autoBlockToggle.Parent = contentFrame
-            
-            local reachToggle = CreateToggle("Reach", "Combat", "Reach", false)
-            reachToggle.Parent = contentFrame
-            
-            local reachSlider = CreateSlider("Reach Distance", "Combat", "ReachDistance", 10, 100, 25)
-            reachSlider.Parent = contentFrame
-            
-            local noCooldownToggle = CreateToggle("No Cooldown", "Combat", "NoCooldown", false)
-            noCooldownToggle.Parent = contentFrame
-            
-            local noRecoilToggle = CreateToggle("No Recoil", "Combat", "NoRecoil", false)
-            noRecoilToggle.Parent = contentFrame
-            
-            local rapidFireToggle = CreateToggle("Rapid Fire", "Combat", "RapidFire", false)
-            rapidFireToggle.Parent = contentFrame
-            
-            local hitboxToggle = CreateToggle("Hitbox Expander", "Misc", "HitboxExpander", false)
-            hitboxToggle.Parent = contentFrame
-            
-            local hitboxSlider = CreateSlider("Hitbox Size", "Misc", "HitboxSize", 1, 5, 2)
-            hitboxSlider.Parent = contentFrame
         end},
         
         {Name = "Misc", Icon = "⚙️", Content = function()
@@ -1316,29 +1087,11 @@ function CreateUI()
             local antiAfkToggle = CreateToggle("Anti-AFK", "Misc", "AntiAfk", true)
             antiAfkToggle.Parent = contentFrame
             
-            local autoFarmToggle = CreateToggle("Auto Farm", "Misc", "AutoFarm", false)
-            autoFarmToggle.Parent = contentFrame
-            
-            local autoCollectToggle = CreateToggle("Auto Collect", "Misc", "AutoCollect", false)
-            autoCollectToggle.Parent = contentFrame
-            
             local autoClickerToggle = CreateToggle("Auto Clicker", "Misc", "AutoClicker", false)
             autoClickerToggle.Parent = contentFrame
             
             local clickSpeedSlider = CreateSlider("Click Speed", "Misc", "ClickSpeed", 1, 100, 10)
             clickSpeedSlider.Parent = contentFrame
-            
-            local antiStompToggle = CreateToggle("Anti Stomp", "Misc", "AntiStomp", false)
-            antiStompToggle.Parent = contentFrame
-            
-            local serverHopToggle = CreateToggle("Server Hop", "Misc", "ServerHop", false)
-            serverHopToggle.Parent = contentFrame
-            
-            local rejoinToggle = CreateToggle("Auto ReJoin", "Misc", "ReJoin", false)
-            rejoinToggle.Parent = contentFrame
-            
-            local autoRespawnToggle = CreateToggle("Auto Respawn", "Misc", "AutoRespawn", false)
-            autoRespawnToggle.Parent = contentFrame
             
             local antiVoidToggle = CreateToggle("Anti Void", "Misc", "AntiVoid", false)
             antiVoidToggle.Parent = contentFrame
@@ -1477,10 +1230,9 @@ function ShowNotification(title, message, duration)
     
     -- Animação de entrada
     notif.Position = UDim2.new(0, 5, 1, 5)
-    local tween = TweenService:Create(notif, TweenInfo.new(0.3), {
+    TweenService:Create(notif, TweenInfo.new(0.3), {
         Position = UDim2.new(0, 5, 1, -75)
-    })
-    tween:Play()
+    }):Play()
     
     -- Remove depois da duração
     task.spawn(function()
@@ -1495,50 +1247,11 @@ function ShowNotification(title, message, duration)
 end
 
 --==============================================================================
--- SISTEMA DE CHAT
---==============================================================================
-
-local function SetupChatSystem()
-    Player.Chatted:Connect(function(message)
-        local cleanMsg = string.lower(string.gsub(message, "%s+", ""))
-        
-        if cleanMsg == ";menu" then
-            ToggleMenu()
-        elseif cleanMsg == ";esp" then
-            Config.ESP.Enabled = not Config.ESP.Enabled
-            ShowNotification("ESP", Config.ESP.Enabled and "Ativado" or "Desativado", 2)
-        elseif cleanMsg == ";aimbot" then
-            Config.Aimbot.Enabled = not Config.Aimbot.Enabled
-            ShowNotification("Aimbot", Config.Aimbot.Enabled and "Ativado" or "Desativado", 2)
-        elseif cleanMsg == ";fly" then
-            Config.Movement.Fly = not Config.Movement.Fly
-            ShowNotification("Fly", Config.Movement.Fly and "Ativado" or "Desativado", 2)
-        elseif cleanMsg == ";speed" then
-            Config.Movement.Speed = not Config.Movement.Speed
-            ShowNotification("Speed", Config.Movement.Speed and "Ativado" or "Desativado", 2)
-        elseif cleanMsg == ";help" then
-            ShowNotification("Comandos disponíveis", 
-                ";menu - Abrir menu\n" ..
-                ";esp - Toggle ESP\n" ..
-                ";aimbot - Toggle Aimbot\n" ..
-                ";fly - Toggle Fly\n" ..
-                ";speed - Toggle Speed\n" ..
-                ";help - Esta mensagem", 5)
-        end
-    end)
-    
-    print("✅ Sistema de chat configurado")
-end
-
---==============================================================================
 -- FUNÇÃO PRINCIPAL - ALTERNAR MENU
 --==============================================================================
 
 function ToggleMenu()
-    print("🔄 Alternando menu...")
-    
     if not State.ScreenGui or not State.ScreenGui.Parent then
-        print("⚠️ Interface não encontrada, criando nova...")
         CreateUI()
     end
     
@@ -1546,224 +1259,193 @@ function ToggleMenu()
         State.MenuVisible = not State.MenuVisible
         State.MainMenu.Visible = State.MenuVisible
         
-        print("📊 Menu visível: " .. tostring(State.MenuVisible))
-        
         ShowNotification("Menu " .. (State.MenuVisible and "Aberto" or "Fechado"), 
             "Comando: ;menu", 2)
-    else
-        print("❌ MainMenu não encontrado!")
     end
 end
+
+--==============================================================================
+-- SISTEMA DE CHAT
+--==============================================================================
+
+Player.Chatted:Connect(function(message)
+    local cleanMsg = string.lower(string.gsub(message, "%s+", ""))
+    
+    if cleanMsg == ";menu" then
+        ToggleMenu()
+    elseif cleanMsg == ";esp" then
+        Config.ESP.Enabled = not Config.ESP.Enabled
+        ShowNotification("ESP", Config.ESP.Enabled and "Ativado" or "Desativado", 2)
+    elseif cleanMsg == ";aimbot" then
+        Config.Aimbot.Enabled = not Config.Aimbot.Enabled
+        ShowNotification("Aimbot", Config.Aimbot.Enabled and "Ativado" or "Desativado", 2)
+    elseif cleanMsg == ";fly" then
+        Config.Movement.Fly = not Config.Movement.Fly
+        ShowNotification("Fly", Config.Movement.Fly and "Ativado" or "Desativado", 2)
+    elseif cleanMsg == ";speed" then
+        Config.Movement.Speed = not Config.Movement.Speed
+        ShowNotification("Speed", Config.Movement.Speed and "Ativado" or "Desativado", 2)
+    elseif cleanMsg == ";help" then
+        ShowNotification("Comandos disponíveis", 
+            ";menu - Abrir menu\n" ..
+            ";esp - Toggle ESP\n" ..
+            ";aimbot - Toggle Aimbot\n" ..
+            ";fly - Toggle Fly\n" ..
+            ";speed - Toggle Speed\n" ..
+            ";help - Esta mensagem", 5)
+    end
+end)
 
 --==============================================================================
 -- SISTEMA DE TECLAS
 --==============================================================================
 
-local function SetupKeybinds()
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed then
-            -- Teclas para abrir menu
-            if input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.M then
-                print("🎮 TECLA " .. input.KeyCode.Name .. " PRESSIONADA - ABRINDO MENU")
-                ToggleMenu()
-            end
-            
-            -- Controles de voo
-            local key = input.KeyCode.Name
-            if key == "W" then State.FlyKeys.W = true end
-            if key == "A" then State.FlyKeys.A = true end
-            if key == "S" then State.FlyKeys.S = true end
-            if key == "D" then State.FlyKeys.D = true end
-            if key == "Space" then State.FlyKeys.Space = true end
-            if key == "LeftControl" then State.FlyKeys.LeftControl = true end
-            
-            -- Trigger para aimbot
-            if Config.Aimbot.TriggerKey == key then
-                if Config.Aimbot.Enabled and not Config.Aimbot.HoldToAim then
-                    Config.Aimbot.Enabled = false
-                    task.wait(0.1)
-                    Config.Aimbot.Enabled = true
-                end
-            end
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        -- Teclas para abrir menu
+        if input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.M then
+            ToggleMenu()
         end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
+        
+        -- Controles de voo
         local key = input.KeyCode.Name
-        if key == "W" then State.FlyKeys.W = false end
-        if key == "A" then State.FlyKeys.A = false end
-        if key == "S" then State.FlyKeys.S = false end
-        if key == "D" then State.FlyKeys.D = false end
-        if key == "Space" then State.FlyKeys.Space = false end
-        if key == "LeftControl" then State.FlyKeys.LeftControl = false end
-    end)
-    
-    print("✅ Teclas configuradas: RightShift/M para menu")
-end
+        if key == "W" then State.FlyKeys.W = true end
+        if key == "A" then State.FlyKeys.A = true end
+        if key == "S" then State.FlyKeys.S = true end
+        if key == "D" then State.FlyKeys.D = true end
+        if key == "Space" then State.FlyKeys.Space = true end
+        if key == "LeftControl" then State.FlyKeys.LeftControl = true end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    local key = input.KeyCode.Name
+    if key == "W" then State.FlyKeys.W = false end
+    if key == "A" then State.FlyKeys.A = false end
+    if key == "S" then State.FlyKeys.S = false end
+    if key == "D" then State.FlyKeys.D = false end
+    if key == "Space" then State.FlyKeys.Space = false end
+    if key == "LeftControl" then State.FlyKeys.LeftControl = false end
+end)
 
 --==============================================================================
 -- LOOP PRINCIPAL
 --==============================================================================
 
-local function MainLoop()
-    print("🔄 Iniciando loop principal...")
+RunService.Heartbeat:Connect(function()
+    -- Aimbot
+    if Config.Aimbot.Enabled then
+        Aimbot:Update()
+    end
     
-    RunService.Heartbeat:Connect(function(deltaTime)
-        -- Aimbot
-        if Config.Aimbot.Enabled then
-            Aimbot:Update()
-        end
+    -- ESP
+    if Config.ESP.Enabled then
+        ESP:UpdateAll()
+    end
+    
+    -- Auto Parry
+    if Config.AutoParry.Enabled then
+        AutoParry:CheckBall()
+    end
+    
+    -- Speed Hack
+    if Humanoid and Config.Movement.Speed then
+        Humanoid.WalkSpeed = Config.Movement.SpeedValue
+    elseif Humanoid then
+        Humanoid.WalkSpeed = OriginalSettings.WalkSpeed
+    end
+    
+    -- Jump Power
+    if Humanoid and Config.Movement.JumpPower then
+        Humanoid.JumpPower = Config.Movement.JumpValue
+    elseif Humanoid then
+        Humanoid.JumpPower = OriginalSettings.JumpPower
+    end
+    
+    -- Fly System
+    if Config.Movement.Fly and Character and HumanoidRootPart then
+        Humanoid.PlatformStand = true
         
-        -- ESP
-        if Config.ESP.Enabled then
-            ESP:UpdateAll()
-        end
+        local forward = 0
+        local right = 0
+        local up = 0
         
-        -- Auto Parry
-        if Config.AutoParry.Enabled then
-            AutoParry:CheckBall()
-        end
+        if State.FlyKeys.W then forward = forward + 1 end
+        if State.FlyKeys.S then forward = forward - 1 end
+        if State.FlyKeys.D then right = right + 1 end
+        if State.FlyKeys.A then right = right - 1 end
+        if State.FlyKeys.Space then up = up + 1 end
+        if State.FlyKeys.LeftControl then up = up - 1 end
         
-        -- Speed Hack
-        if Humanoid and Config.Movement.Speed then
-            Humanoid.WalkSpeed = Config.Movement.SpeedValue
-        elseif Humanoid then
-            Humanoid.WalkSpeed = OriginalSettings.WalkSpeed
-        end
-        
-        -- Jump Power
-        if Humanoid and Config.Movement.JumpPower then
-            Humanoid.JumpPower = Config.Movement.JumpValue
-        elseif Humanoid then
-            Humanoid.JumpPower = OriginalSettings.JumpPower
-        end
-        
-        -- Fly System
-        if Config.Movement.Fly and Character and HumanoidRootPart then
-            Humanoid.PlatformStand = true
+        local camera = Workspace.CurrentCamera
+        if camera then
+            local lookVector = camera.CFrame.LookVector
+            local rightVector = camera.CFrame.RightVector
+            local upVector = Vector3.new(0, 1, 0)
             
-            local forward = 0
-            local right = 0
-            local up = 0
-            
-            if State.FlyKeys.W then forward = forward + 1 end
-            if State.FlyKeys.S then forward = forward - 1 end
-            if State.FlyKeys.D then right = right + 1 end
-            if State.FlyKeys.A then right = right - 1 end
-            if State.FlyKeys.Space then up = up + 1 end
-            if State.FlyKeys.LeftControl then up = up - 1 end
-            
-            local camera = Workspace.CurrentCamera
-            if camera then
-                local lookVector = camera.CFrame.LookVector
-                local rightVector = camera.CFrame.RightVector
-                local upVector = Vector3.new(0, 1, 0)
-                
-                local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
-                HumanoidRootPart.Velocity = moveVector * Config.Movement.FlySpeed
-            end
-        elseif Humanoid then
-            Humanoid.PlatformStand = false
+            local moveVector = (lookVector * forward + rightVector * right + upVector * up).Unit
+            HumanoidRootPart.Velocity = moveVector * Config.Movement.FlySpeed
         end
-        
-        -- FOV Changer
-        if Camera and Config.Visuals.FOVChanger then
-            Camera.FieldOfView = Config.Visuals.FOVValue
-        elseif Camera then
-            Camera.FieldOfView = OriginalSettings.FOV
-        end
-        
-        -- FullBright
-        if Config.Visuals.FullBright then
-            Lighting.GlobalShadows = false
-            Lighting.Brightness = 2
-        else
-            Lighting.GlobalShadows = OriginalSettings.GlobalShadows
-            Lighting.Brightness = OriginalSettings.Brightness
-        end
-        
-        -- No Shadows
-        Lighting.GlobalShadows = not Config.Visuals.NoShadows
-        
-        -- Ambient Lighting
-        if Config.Visuals.AmbientLighting then
-            Lighting.Ambient = Config.Visuals.AmbientValue
-        else
-            Lighting.Ambient = OriginalSettings.Ambient
-        end
-        
-        -- Time Changer
-        if Config.Visuals.TimeChanger then
-            Lighting.ClockTime = Config.Visuals.TimeValue
-        end
-        
-        -- Remove Effects
-        if Config.Visuals.RemoveEffects then
-            for _, effect in pairs(Lighting:GetChildren()) do
-                if effect:IsA("Atmosphere") or effect:IsA("Sky") then
-                    effect:Destroy()
-                end
+    elseif Humanoid then
+        Humanoid.PlatformStand = false
+    end
+    
+    -- FOV Changer
+    if Camera and Config.Visuals.FOVChanger then
+        Camera.FieldOfView = Config.Visuals.FOVValue
+    elseif Camera then
+        Camera.FieldOfView = OriginalSettings.FOV
+    end
+    
+    -- FullBright
+    if Config.Visuals.FullBright then
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 2
+    else
+        Lighting.GlobalShadows = OriginalSettings.GlobalShadows
+        Lighting.Brightness = OriginalSettings.Brightness
+    end
+    
+    -- Rainbow Character
+    if Config.Misc.RainbowCharacter and Character then
+        State.RainbowHue = (State.RainbowHue + 1) % 360
+        local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
+        for _, part in pairs(Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Color = color
             end
         end
-        
-        -- Remove Particles
-        if Config.Visuals.RemoveParticles then
-            for _, part in pairs(Workspace:GetDescendants()) do
-                if part:IsA("ParticleEmitter") then
-                    part:Destroy()
-                end
-            end
-        end
-        
-        -- Rainbow Character
-        if Config.Misc.RainbowCharacter and Character then
-            State.RainbowHue = (State.RainbowHue + 1) % 360
-            local color = Color3.fromHSV(State.RainbowHue / 360, 1, 1)
-            for _, part in pairs(Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.Color = color
-                end
-            end
-        end
-        
-        -- Spin Bot
-        if Config.Misc.SpinBot and HumanoidRootPart then
-            HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
-        end
-        
-        -- Kill Aura
-        Combat:KillAura()
-        
-        -- Bhop
-        Bhop:Update()
-        
-        -- Noclip
-        UpdateNoclip()
-        
-        -- Auto Farm
-        if Config.Misc.AutoFarm then
-            AutoFarm:CollectItems()
-        end
-        
-        -- Anti Void
-        AntiVoid:Check()
-    end)
-end
+    end
+    
+    -- Spin Bot
+    if Config.Misc.SpinBot and HumanoidRootPart then
+        HumanoidRootPart.CFrame = HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
+    end
+    
+    -- Kill Aura
+    Combat:KillAura()
+    
+    -- Bhop
+    Bhop:Update()
+    
+    -- Noclip
+    UpdateNoclip()
+    
+    -- Anti Void
+    AntiVoid:Check()
+end)
 
 --==============================================================================
 -- ANTI-AFK
 --==============================================================================
 
-local function SetupAntiAFK()
-    if Config.Misc.AntiAfk then
-        local VirtualUser = game:GetService("VirtualUser")
-        Player.Idled:Connect(function()
-            VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-            task.wait(1)
-            VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-        end)
-        print("✅ Anti-AFK ativado")
-    end
+if Config.Misc.AntiAfk then
+    local VirtualUser = game:GetService("VirtualUser")
+    Player.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+    end)
 end
 
 --==============================================================================
@@ -1773,121 +1455,44 @@ end
 InfiniteJump:Connect()
 
 --==============================================================================
--- PLAYER CONNECTIONS
+-- INICIALIZAÇÃO
 --==============================================================================
 
-local function SetupPlayerConnections()
-    Players.PlayerAdded:Connect(function(player)
-        if Config.ESP.Enabled then
-            ESP:Create(player)
-        end
-    end)
-    
-    Players.PlayerRemoving:Connect(function(player)
-        ESP:Remove(player)
-    end)
-    
-    -- Conectar ESP para jogadores existentes
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Player then
-            ESP:Create(player)
-        end
+-- Criar a interface
+CreateUI()
+
+-- Conectar ESP para jogadores existentes
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= Player then
+        ESP:Create(player)
     end
 end
 
---==============================================================================
--- CHARACTER CONNECTIONS
---==============================================================================
+-- Notificação inicial
+task.wait(2)
+ShowNotification("Blade Ball Ultimate Hub v6.0", 
+    "✅ Sistema carregado do GitHub!\n\n" ..
+    "📝 Comandos disponíveis:\n" ..
+    "• ;menu - Abrir menu\n" ..
+    "• ;esp - Toggle ESP\n" ..
+    "• ;aimbot - Toggle Aimbot\n" ..
+    "• ;fly - Toggle Fly\n" ..
+    "• ;speed - Toggle Speed\n" ..
+    "• ;help - Mostrar ajuda\n\n" ..
+    "🎮 Teclas: RightShift ou M\n" ..
+    "⚔️ Hospedado no GitHub", 8)
 
-local function SetupCharacterConnections()
-    Player.CharacterAdded:Connect(function(char)
-        Character = char
-        Humanoid = char:WaitForChild("Humanoid")
-        HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
-        Camera = Workspace.CurrentCamera
-        
-        if Config.Misc.AutoRespawn then
-            ShowNotification("Auto Respawn", "Personagem respawnado", 2)
-        end
-    end)
-end
+print("========================================")
+print("✅ BLADE BALL ULTIMATE HUB v6.0 (GITHUB)")
+print("✅ Sistema carregado com sucesso!")
+print("📁 Script carregado do GitHub")
+print("📝 Comandos: ;menu, ;esp, ;aimbot, ;fly, ;speed, ;help")
+print("🎮 Teclas: RightShift ou M")
+print("🚀 Sistema universal para todos os jogos")
+print("👨‍💻 Desenvolvedor: Danizao_Piu")
+print("========================================")
 
---==============================================================================
--- INICIALIZAÇÃO COMPLETA
---==============================================================================
-
-local function Initialize()
-    print("🚀 INICIALIZANDO SISTEMA COMPLETO...")
-    
-    -- Criar interface primeiro
-    CreateUI()
-    
-    -- Configurar sistemas
-    SetupChatSystem()
-    SetupKeybinds()
-    SetupAntiAFK()
-    SetupPlayerConnections()
-    SetupCharacterConnections()
-    
-    -- Iniciar loop principal
-    MainLoop()
-    
-    -- Notificação inicial
-    task.wait(2)
-    ShowNotification("Blade Ball Ultimate Hub v6.0", 
-        "✅ Sistema Universal carregado!\n\n" ..
-        "📝 Comandos disponíveis:\n" ..
-        "• ;menu - Abrir menu\n" ..
-        "• ;esp - Toggle ESP\n" ..
-        "• ;aimbot - Toggle Aimbot\n" ..
-        "• ;fly - Toggle Fly\n" ..
-        "• ;speed - Toggle Speed\n" ..
-        "• ;help - Mostrar ajuda\n\n" ..
-        "🎮 Teclas: RightShift ou M\n" ..
-        "⚔️ Compatível com todos os jogos", 8)
-    
-    print("========================================")
-    print("✅ BLADE BALL ULTIMATE HUB v6.0 UNIVERSAL")
-    print("✅ Sistema carregado com sucesso!")
-    print("🎮 Compatível com todos os jogos Roblox")
-    print("📝 Comandos: ;menu, ;esp, ;aimbot, ;fly, ;speed, ;help")
-    print("🎮 Teclas: RightShift ou M")
-    print("🚀 Funcionalidades implementadas:")
-    print("   • Aimbot e Silent Aim")
-    print("   • ESP Completo (Box, Tracer, Health, etc)")
-    print("   • Auto Parry e Auto Clicker")
-    print("   • Speed, Fly, Noclip, Bhop")
-    print("   • Visual Mods (FOV, Fullbright, etc)")
-    print("   • Combat Mods (Kill Aura, Reach, etc)")
-    print("   • Misc (Anti-AFK, Auto Farm, etc)")
-    print("👨‍💻 Desenvolvedor: gb.paiva23")
-    print("========================================")
-    
-    -- Testar menu
-    task.wait(3)
-    print("🔧 Testando sistema de menu...")
-    print("📱 Tente pressionar RightShift, M ou digitar ;menu no chat")
-    
-    -- Loop para manter script ativo
-    while true do
-        task.wait(1)
-    end
-end
-
---==============================================================================
--- EXECUTAR INICIALIZAÇÃO
---==============================================================================
-
--- Executar inicialização com tratamento de erros
-local success, errorMessage = pcall(function()
-    Initialize()
-end)
-
-if not success then
-    warn("❌ Erro na inicialização: " .. errorMessage)
-    -- Tentar criar pelo menos a interface básica
-    pcall(function()
-        CreateUI()
-        ShowNotification("Erro na inicialização", "Alguns sistemas podem não funcionar\nTente recarregar o script", 5)
-    end)
+-- Loop para manter script ativo
+while true do
+    task.wait(1)
 end
