@@ -22,13 +22,18 @@ local MainTab = Window:NewTab("Controle")
 local MainSection = MainTab:NewSection("Seleção de Jogador")
 
 -- Dropdown para selecionar jogadores
-local PlayerDropdown = MainSection:NewDropdown(
+local PlayerDropdown
+local PlayerDropdownCallback = function(selected)
+    AntiScripter.SelectedPlayer = selected
+    print("Jogador selecionado: " .. selected)
+end
+
+-- Criar dropdown inicialmente vazio
+PlayerDropdown = MainSection:NewDropdown(
     "Selecionar Jogador", 
     "Escolha o scripter problemático", 
     {}, 
-    function(selected)
-        AntiScripter.SelectedPlayer = selected
-    end
+    PlayerDropdownCallback
 )
 
 -- Atualizar lista de jogadores
@@ -39,7 +44,16 @@ local function UpdatePlayerList()
             table.insert(playerNames, player.Name)
         end
     end
+    
+    -- Se não houver outros jogadores, adiciona uma opção vazia
+    if #playerNames == 0 then
+        table.insert(playerNames, "Nenhum jogador encontrado")
+    end
+    
+    -- Atualiza o dropdown
     PlayerDropdown:Refresh(playerNames, true)
+    
+    return playerNames
 end
 
 -- Botão de punição
@@ -47,7 +61,7 @@ local PunishButton = MainSection:NewButton(
     "Punir Jogador Selecionado", 
     "Envia o scripter para o void em loop", 
     function()
-        if AntiScripter.SelectedPlayer then
+        if AntiScripter.SelectedPlayer and AntiScripter.SelectedPlayer ~= "Nenhum jogador encontrado" then
             local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
             if targetPlayer and targetPlayer.Character then
                 AntiScripter.IsPunishing = not AntiScripter.IsPunishing
@@ -55,9 +69,11 @@ local PunishButton = MainSection:NewButton(
                 if AntiScripter.IsPunishing then
                     PunishButton:UpdateText("Parar Punição")
                     StartVoidLoop(targetPlayer)
+                    Library:CreateNotification("Sucesso", "Punindo " .. targetPlayer.Name, "OK")
                 else
                     PunishButton:UpdateText("Punir Jogador Selecionado")
                     StopVoidLoop()
+                    Library:CreateNotification("Aviso", "Punição interrompida", "OK")
                 end
             else
                 Library:CreateNotification("Erro", "Jogador não encontrado ou sem personagem", "OK")
@@ -74,7 +90,7 @@ local MonitorSection = MonitorTab:NewSection("Status do Sistema")
 
 -- Labels de status
 local StatusLabel = MonitorSection:NewLabel("Status: Inativo")
-local TargetLabel = MonitorSection:NewSection("Alvo: Nenhum")
+local TargetLabel = MonitorSection:NewLabel("Alvo: Nenhum")
 
 -- Função para enviar jogador ao void
 local function SendToVoid(player)
@@ -94,17 +110,34 @@ local function SendToVoid(player)
                     tool:Destroy()
                 end
             end
+            
+            -- Tentar remover scripts locais
+            local scriptsToRemove = {
+                "LocalScript", "Script", "ModuleScript"
+            }
+            
+            for _, scriptType in ipairs(scriptsToRemove) do
+                for _, script in ipairs(character:GetDescendants()) do
+                    if script:IsA(scriptType) then
+                        script:Destroy()
+                    end
+                end
+            end
         end
     end
 end
 
 -- Loop do void
 function StartVoidLoop(targetPlayer)
+    if AntiScripter.VoidLoop then
+        AntiScripter.VoidLoop:Disconnect()
+    end
+    
     AntiScripter.VoidLoop = RunService.Heartbeat:Connect(function()
         if targetPlayer and targetPlayer.Character then
             SendToVoid(targetPlayer)
             StatusLabel:UpdateLabel("Status: Punindo " .. targetPlayer.Name)
-            TargetLabel:UpdateSection("Alvo: " .. targetPlayer.Name)
+            TargetLabel:UpdateLabel("Alvo: " .. targetPlayer.Name)
         end
     end)
 end
@@ -116,7 +149,18 @@ function StopVoidLoop()
     end
     AntiScripter.IsPunishing = false
     StatusLabel:UpdateLabel("Status: Inativo")
-    TargetLabel:UpdateSection("Alvo: Nenhum")
+    TargetLabel:UpdateLabel("Alvo: Nenhum")
+    
+    -- Reativar movimento do jogador se ainda estiver na partida
+    if AntiScripter.SelectedPlayer and AntiScripter.SelectedPlayer ~= "Nenhum jogador encontrado" then
+        local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
+        if targetPlayer and targetPlayer.Character then
+            local humanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                humanoidRootPart.Anchored = false
+            end
+        end
+    end
 end
 
 -- Página de configurações
@@ -128,8 +172,12 @@ SettingsSection:NewButton(
     "Atualizar Lista de Jogadores", 
     "Recarrega a lista de jogadores online", 
     function()
-        UpdatePlayerList()
-        Library:CreateNotification("Sucesso", "Lista de jogadores atualizada", "OK")
+        local players = UpdatePlayerList()
+        if #players > 0 and players[1] ~= "Nenhum jogador encontrado" then
+            Library:CreateNotification("Sucesso", "Lista atualizada: " .. #players .. " jogadores", "OK")
+        else
+            Library:CreateNotification("Info", "Nenhum outro jogador na partida", "OK")
+        end
     end
 )
 
@@ -140,6 +188,20 @@ SettingsSection:NewToggle(
     "Atualiza automaticamente a lista de jogadores", 
     function(state)
         AutoRefresh = state
+        Library:CreateNotification("Configuração", "Auto-atualização: " .. (state and "LIGADA" or "DESLIGADA"), "OK")
+    end
+):Set(AutoRefresh)
+
+-- Adicionar botão para ver jogadores atuais
+SettingsSection:NewButton(
+    "Ver Jogadores Atuais", 
+    "Mostra todos os jogadores na partida", 
+    function()
+        local playerList = ""
+        for _, player in pairs(Players:GetPlayers()) do
+            playerList = playerList .. player.Name .. "\n"
+        end
+        Library:CreateNotification("Jogadores na Partida", playerList, "OK")
     end
 )
 
@@ -149,35 +211,53 @@ spawn(function()
         if AutoRefresh then
             UpdatePlayerList()
         end
-        wait(5)
+        task.wait(5)
     end
 end)
 
 -- Eventos para novos jogadores
-Players.PlayerAdded:Connect(function()
-    if AutoRefresh then
-        wait(1)
+Players.PlayerAdded:Connect(function(player)
+    if AutoRefresh and player ~= Players.LocalPlayer then
+        task.wait(1)
         UpdatePlayerList()
+        Library:CreateNotification("Novo Jogador", player.Name .. " entrou na partida", "OK")
     end
 end)
 
-Players.PlayerRemoving:Connect(function()
+Players.PlayerRemoving:Connect(function(player)
     if AutoRefresh then
-        wait(1)
+        task.wait(1)
         UpdatePlayerList()
+        if AntiScripter.SelectedPlayer == player.Name then
+            AntiScripter.SelectedPlayer = nil
+            StopVoidLoop()
+            PunishButton:UpdateText("Punir Jogador Selecionado")
+        end
     end
 end)
 
 -- Inicialização
+task.wait(1) -- Aguardar um pouco para garantir que todos os jogadores carregaram
 UpdatePlayerList()
-Library:CreateNotification("Sistema Anti-Scripter", "Sistema carregado com sucesso!\nSelecione um jogador para punir.", "OK")
+Library:CreateNotification("Sistema Anti-Scripter", 
+    "Sistema carregado com sucesso!\n" ..
+    "Jogadores na partida: " .. #Players:GetPlayers() .. "\n" ..
+    "Selecione um jogador para punir.", 
+    "OK"
+)
 
 -- Limpeza ao fechar
 game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.Delete then
         StopVoidLoop()
-        Library:Destroy()
+        Window:Destroy()
+        Library:DestroyNotification()
+        print("Sistema Anti-Scripter fechado!")
     end
 end)
 
-print("Anti-Scripter System carregado! Pressione Delete para fechar.")
+print("=== Anti-Scripter System ===")
+print("Carregado com sucesso!")
+print("Jogadores na partida: " .. #Players:GetPlayers())
+print("Pressione Delete para fechar o menu")
+print("=============================")
