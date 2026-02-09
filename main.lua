@@ -1,1647 +1,1029 @@
---===========================================================
--- ANTI-SCRIPTER ULTIMATE VOID SYSTEM - V5.0
--- 10 CAMADAS DE PUNIÇÃO SIMULTÂNEAS
--- 2000+ LINHAS DE CÓDIGO
--- SISTEMA COMPLETO E DETALHADO
---===========================================================
+-- ANTI-SCRIPTER ULTIMATE SYSTEM - INTERFACE CORRIGIDA
+-- SISTEMA COMPLETO COM INTERFACE FUNCIONAL
 
---[[
-    SISTEMA DE 10 CAMADAS DE PUNIÇÃO:
-    1. VOID PRIMÁRIO - Teleporte constante para o void
-    2. VOID SECUNDÁRIO - Loop de queda infinita
-    3. VOID TERCIÁRIO - Câmera forçada no void
-    4. VOID QUATERNÁRIO - Remoção de partes do corpo
-    5. VOID QUINTÁRIO - Script injection anti-escape
-    6. VOID SEXTÁRIO - Network ownership hijack
-    7. VOID SEPTENÁRIO - Physics lock extremo
-    8. VOID OCTONÁRIO - Sound spam torture
-    9. VOID NONÁRIO - GUI destruction
-    10. VOID DÉCIMO - Memory manipulation
-]]
-
---===========================================================
--- SERVIÇOS PRINCIPAIS
---===========================================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui")
-local StarterPlayer = game:GetService("StarterPlayer")
-local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local SoundService = game:GetService("SoundService")
-local Debris = game:GetService("Debris")
-local PathfindingService = game:GetService("PathfindingService")
-local MarketplaceService = game:GetService("MarketplaceService")
-local TextService = game:GetService("TextService")
-local CollectionService = game:GetService("CollectionService")
-local ContextActionService = game:GetService("ContextActionService")
-local UserInputService = game:GetService("UserInputService")
-local VRService = game:GetService("VRService")
-local GamepadService = game:GetService("GamepadService")
-local SocialService = game:GetService("SocialService")
-local Chat = game:GetService("Chat")
-local VoiceChatService = game:GetService("VoiceChatService")
-local Teams = game:GetService("Teams")
-local GroupService = game:GetService("GroupService")
-local AnalyticsService = game:GetService("AnalyticsService")
-local LocalizationService = game:GetService("LocalizationService")
-local ScriptContext = game:GetService("ScriptContext")
-local ContentProvider = game:GetService("ContentProvider")
-local TestService = game:GetService("TestService")
-local ChangeHistoryService = game:GetService("ChangeHistoryService")
-local MaterialService = game:GetService("MaterialService")
-local PhysicsService = game:GetService("PhysicsService")
-local StreamingService = game:GetService("StreamingService")
+local StarterGui = game:GetService("StarterGui")
 
---===========================================================
--- VARIÁVEIS GLOBAIS E CONFIGURAÇÕES
---===========================================================
+-- Vamos criar nossa PRÓPRIA interface para garantir que funcione
 local LocalPlayer = Players.LocalPlayer
-local AntiScripter = {
-    -- Configurações principais
-    Version = "5.0",
-    Author = "Anti-Scripter Ultimate System",
-    LastUpdate = os.date("%d/%m/%Y %H:%M:%S"),
-    
-    -- Estado do sistema
-    IsSystemActive = true,
-    IsPunishing = false,
-    SelectedPlayer = nil,
-    TargetPlayer = nil,
-    TargetCharacter = nil,
-    
-    -- Camadas de punição ativas
-    ActiveLayers = {
-        Layer1 = false,  -- Void Primário
-        Layer2 = false,  -- Void Secundário
-        Layer3 = false,  -- Void Terciário
-        Layer4 = false,  -- Void Quaternário
-        Layer5 = false,  -- Void Quintário
-        Layer6 = false,  -- Void Sextário
-        Layer7 = false,  -- Void Septenário
-        Layer8 = false,  -- Void Octonário
-        Layer9 = false,  -- Void Nonário
-        Layer10 = false, -- Void Décimo
-    },
-    
-    -- Conexões e loops
-    Connections = {},
-    Loops = {},
-    Tweens = {},
-    Sounds = {},
-    GUIs = {},
-    Scripts = {},
-    
-    -- Posições do void
-    VoidPositions = {
-        DeepVoid = Vector3.new(0, -100000, 0),
-        UnderMap = Vector3.new(0, -50000, 0),
-        SpaceVoid = Vector3.new(999999, 999999, 999999),
-        NegativeVoid = Vector3.new(-999999, -999999, -999999),
-        OceanVoid = Vector3.new(0, -1000, 0),
-        SkyVoid = Vector3.new(0, 1000000, 0),
-        MazeVoid = Vector3.new(100000, -50000, 100000),
-        SpiralVoid = Vector3.new(50000, -30000, 50000),
-        RandomVoid = Vector3.new(math.random(-999999, 999999), math.random(-999999, 999999), math.random(-999999, 999999)),
-        MovingVoid = Vector3.new(0, 0, 0)
-    },
-    
-    -- Configurações avançadas
-    Settings = {
-        AutoRefreshPlayers = true,
-        AutoUpdateGUI = true,
-        ShowDebugInfo = true,
-        EnableSounds = true,
-        ExtremeMode = true,
-        AntiAntiScript = true,
-        BypassFE = true,
-        GhostMode = false,
-        LogActions = true,
-        BackupSystems = true
-    },
-    
-    -- Dados do jogador
-    PlayerData = {},
-    OriginalStates = {},
-    BackupData = {},
-    
-    -- Contadores e estatísticas
-    Stats = {
-        TotalPunishments = 0,
-        ActivePunishments = 0,
-        LayersUsed = 0,
-        TimeActive = 0,
-        PlayersAffected = 0
-    },
-    
-    -- Sistema de logs
-    Logs = {},
-    ErrorLogs = {},
-    SuccessLogs = {},
-    
-    -- Sistema de backup
-    Backups = {},
-    RecoveryPoints = {},
-    
-    -- Sistema de segurança
-    SecurityLevel = 10,
-    AntiTamper = true,
-    EncryptionKey = HttpService:GenerateGUID(false)
-}
+
+-- Sistema de logs
+local function Log(message, type)
+    local timestamp = os.date("[%H:%M:%S]")
+    local logEntry = timestamp .. " [" .. type .. "] " .. message
+    print("📝 " .. logEntry)
+    return logEntry
+end
+
+Log("🚀 Iniciando Anti-Scripter Ultimate System", "SYSTEM")
 
 --===========================================================
--- SISTEMA DE LOGS DETALHADO
+-- SISTEMA DE INTERFACE MANUAL 100% FUNCIONAL
 --===========================================================
-local Logger = {
-    Log = function(message, type)
-        local timestamp = os.date("[%H:%M:%S]")
-        local logEntry = timestamp .. " [" .. type .. "] " .. message
-        
-        table.insert(AntiScripter.Logs, logEntry)
-        
-        if AntiScripter.Settings.ShowDebugInfo then
-            print("📝 " .. logEntry)
-        end
-        
-        return logEntry
-    end,
-    
-    Error = function(message)
-        local logEntry = Logger.Log(message, "ERROR")
-        table.insert(AntiScripter.ErrorLogs, logEntry)
-        return logEntry
-    end,
-    
-    Success = function(message)
-        local logEntry = Logger.Log(message, "SUCCESS")
-        table.insert(AntiScripter.SuccessLogs, logEntry)
-        return logEntry
-    end,
-    
-    Warning = function(message)
-        return Logger.Log(message, "WARNING")
-    end,
-    
-    Info = function(message)
-        return Logger.Log(message, "INFO")
-    end,
-    
-    Debug = function(message)
-        if AntiScripter.Settings.ShowDebugInfo then
-            return Logger.Log(message, "DEBUG")
-        end
-    end,
-    
-    Security = function(message)
-        return Logger.Log(message, "SECURITY")
-    end
-}
-
--- Inicializar sistema de logs
-Logger.Success("Sistema de logs inicializado")
-Logger.Info("Versão do sistema: " .. AntiScripter.Version)
-
---===========================================================
--- SISTEMA DE INTERFACE GRÁFICA AVANÇADA
---===========================================================
-Logger.Info("Carregando interface gráfica...")
-
 local Interface = {
-    MainWindow = nil,
-    Tabs = {},
-    Sections = {},
-    Elements = {},
-    Themes = {
-        Dark = {
-            SchemeColor = Color3.fromRGB(64, 64, 64),
-            Background = Color3.fromRGB(25, 25, 25),
-            Header = Color3.fromRGB(40, 40, 40),
-            TextColor = Color3.fromRGB(255, 255, 255),
-            ElementColor = Color3.fromRGB(35, 35, 35),
-            AccentColor = Color3.fromRGB(255, 50, 50)
-        },
-        Void = {
-            SchemeColor = Color3.fromRGB(0, 0, 0),
-            Background = Color3.fromRGB(10, 10, 30),
-            Header = Color3.fromRGB(0, 0, 50),
-            TextColor = Color3.fromRGB(0, 255, 255),
-            ElementColor = Color3.fromRGB(20, 20, 60),
-            AccentColor = Color3.fromRGB(255, 0, 255)
-        },
-        Matrix = {
-            SchemeColor = Color3.fromRGB(0, 255, 0),
-            Background = Color3.fromRGB(0, 0, 0),
-            Header = Color3.fromRGB(0, 50, 0),
-            TextColor = Color3.fromRGB(0, 255, 0),
-            ElementColor = Color3.fromRGB(0, 25, 0),
-            AccentColor = Color3.fromRGB(255, 255, 0)
-        }
-    }
+    MainGUI = nil,
+    IsOpen = true,
+    Elements = {}
 }
 
--- Carregar biblioteca de interface
-local LibraryLoadSuccess, Library = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-end)
-
-if not LibraryLoadSuccess then
-    -- Biblioteca alternativa
-    LibraryLoadSuccess, Library = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/wally-rblx/LinoriaLib/main/Library.lua"))()
+-- Criar interface principal
+function Interface.Create()
+    Log("Criando interface manual...", "INTERFACE")
+    
+    -- Remover GUIs antigas
+    if Interface.MainGUI then
+        Interface.MainGUI:Destroy()
+    end
+    
+    -- Criar ScreenGui principal
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AntiScripterUltimateGUI"
+    screenGui.DisplayOrder = 999
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Frame principal
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 450, 0, 550)
+    mainFrame.Position = UDim2.new(0.5, -225, 0.5, -275)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    mainFrame.BackgroundTransparency = 0.1
+    mainFrame.BorderSizePixel = 2
+    mainFrame.BorderColor3 = Color3.fromRGB(0, 255, 255)
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.Selectable = true
+    mainFrame.Parent = screenGui
+    
+    -- Sombreamento
+    local shadow = Instance.new("UIStroke")
+    shadow.Color = Color3.fromRGB(0, 150, 255)
+    shadow.Thickness = 3
+    shadow.Parent = mainFrame
+    
+    -- Título
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(0, 0, 50)
+    title.Text = "⚡ ANTI-SCRIPTER ULTIMATE SYSTEM ⚡"
+    title.TextColor3 = Color3.fromRGB(0, 255, 255)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 18
+    title.Parent = mainFrame
+    
+    -- Botão de fechar
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -35, 0, 5)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.TextSize = 16
+    closeButton.Parent = mainFrame
+    
+    closeButton.MouseButton1Click:Connect(function()
+        Interface.Toggle()
     end)
+    
+    -- Container para abas
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Name = "TabContainer"
+    tabContainer.Size = UDim2.new(1, -20, 1, -60)
+    tabContainer.Position = UDim2.new(0, 10, 0, 50)
+    tabContainer.BackgroundTransparency = 1
+    tabContainer.Parent = mainFrame
+    
+    -- Botões de abas
+    local tabButtons = {}
+    local tabs = {}
+    
+    -- Aba 1: Controle
+    local controlTab = Instance.new("ScrollingFrame")
+    controlTab.Name = "ControlTab"
+    controlTab.Size = UDim2.new(1, 0, 1, 0)
+    controlTab.Position = UDim2.new(0, 0, 0, 0)
+    controlTab.BackgroundTransparency = 1
+    controlTab.ScrollBarThickness = 6
+    controlTab.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+    controlTab.CanvasSize = UDim2.new(0, 0, 2, 0)
+    controlTab.Visible = true
+    controlTab.Parent = tabContainer
+    
+    tabs.Control = controlTab
+    
+    -- Aba 2: Monitor
+    local monitorTab = Instance.new("ScrollingFrame")
+    monitorTab.Name = "MonitorTab"
+    monitorTab.Size = UDim2.new(1, 0, 1, 0)
+    monitorTab.Position = UDim2.new(0, 0, 0, 0)
+    monitorTab.BackgroundTransparency = 1
+    monitorTab.ScrollBarThickness = 6
+    monitorTab.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+    monitorTab.CanvasSize = UDim2.new(0, 0, 2, 0)
+    monitorTab.Visible = false
+    monitorTab.Parent = tabContainer
+    
+    tabs.Monitor = monitorTab
+    
+    -- Aba 3: Config
+    local configTab = Instance.new("ScrollingFrame")
+    configTab.Name = "ConfigTab"
+    configTab.Size = UDim2.new(1, 0, 1, 0)
+    configTab.Position = UDim2.new(0, 0, 0, 0)
+    configTab.BackgroundTransparency = 1
+    configTab.ScrollBarThickness = 6
+    configTab.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+    configTab.CanvasSize = UDim2.new(0, 0, 2, 0)
+    configTab.Visible = false
+    configTab.Parent = tabContainer
+    
+    tabs.Config = configTab
+    
+    -- Botões de navegação
+    local navFrame = Instance.new("Frame")
+    navFrame.Name = "Navigation"
+    navFrame.Size = UDim2.new(1, -20, 0, 40)
+    navFrame.Position = UDim2.new(0, 10, 0, 45)
+    navFrame.BackgroundTransparency = 1
+    navFrame.Parent = mainFrame
+    
+    local function createTabButton(name, position, tab)
+        local button = Instance.new("TextButton")
+        button.Name = name .. "Button"
+        button.Size = UDim2.new(0.3, 0, 1, 0)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(40, 40, 80)
+        button.Text = name
+        button.TextColor3 = Color3.fromRGB(200, 200, 255)
+        button.Font = Enum.Font.SourceSansBold
+        button.TextSize = 14
+        button.Parent = navFrame
+        
+        button.MouseButton1Click:Connect(function()
+            -- Esconder todas as abas
+            for _, t in pairs(tabs) do
+                t.Visible = false
+            end
+            
+            -- Mostrar aba selecionada
+            tab.Visible = true
+            
+            -- Atualizar aparência dos botões
+            for _, btn in pairs(tabButtons) do
+                btn.BackgroundColor3 = Color3.fromRGB(40, 40, 80)
+                btn.TextColor3 = Color3.fromRGB(200, 200, 255)
+            end
+            
+            -- Destacar botão ativo
+            button.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+            button.TextColor3 = Color3.new(1, 1, 1)
+        end)
+        
+        table.insert(tabButtons, button)
+        return button
+    end
+    
+    -- Criar botões das abas
+    createTabButton("🎮 CONTROLE", UDim2.new(0, 0, 0, 0), controlTab)
+    createTabButton("📊 MONITOR", UDim2.new(0.33, 0, 0, 0), monitorTab)
+    createTabButton("⚙️ CONFIG", UDim2.new(0.66, 0, 0, 0), configTab)
+    
+    -- Ativar primeira aba
+    tabButtons[1]:MouseButton1Click()
+    
+    -- Armazenar referências
+    Interface.MainGUI = screenGui
+    Interface.MainFrame = mainFrame
+    Interface.Tabs = tabs
+    Interface.TabButtons = tabButtons
+    
+    -- Criar conteúdo das abas
+    Interface.CreateControlTab(controlTab)
+    Interface.CreateMonitorTab(monitorTab)
+    Interface.CreateConfigTab(configTab)
+    
+    Log("Interface criada com sucesso!", "SUCCESS")
+    
+    return screenGui
 end
 
-if not LibraryLoadSuccess then
-    -- Criar interface manualmente
-    Logger.Warning("Falha ao carregar biblioteca de interface, criando interface manual...")
-    Interface.CreateManualGUI = true
-else
-    Logger.Success("Biblioteca de interface carregada com sucesso!")
-    Interface.MainWindow = Library.CreateLib("ANTI-SCRIPTER ULTIMATE SYSTEM v" .. AntiScripter.Version, Interface.Themes.Void)
-end
-
---===========================================================
--- FUNÇÕES UTILITÁRIAS AVANÇADAS
---===========================================================
-local Utilities = {
-    -- Sistema de espera melhorado
-    Wait = function(seconds)
-        local start = tick()
-        repeat RunService.Heartbeat:Wait() until tick() - start >= seconds
-    end,
+-- Criar aba de Controle
+function Interface.CreateControlTab(tab)
+    Log("Criando aba de Controle...", "INTERFACE")
     
-    -- Gerar ID único
-    GenerateID = function()
-        return HttpService:GenerateGUID(false)
-    end,
-    
-    -- Verificar se jogador existe
-    PlayerExists = function(playerName)
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Name == playerName then
-                return player
-            end
-        end
-        return nil
-    end,
-    
-    -- Obter personagem seguro
-    GetCharacter = function(player)
-        local maxAttempts = 10
-        for i = 1, maxAttempts do
-            if player.Character then
-                return player.Character
-            end
-            Utilities.Wait(0.1)
-        end
-        return nil
-    end,
-    
-    -- Obter HumanoidRootPart
-    GetHumanoidRootPart = function(character)
-        if character then
-            return character:FindFirstChild("HumanoidRootPart") or 
-                   character:FindFirstChild("Torso") or
-                   character:FindFirstChild("UpperTorso")
-        end
-        return nil
-    end,
-    
-    -- Obter Humanoid
-    GetHumanoid = function(character)
-        if character then
-            return character:FindFirstChildOfClass("Humanoid")
-        end
-        return nil
-    end,
-    
-    -- Teleportar para posição
-    TeleportTo = function(character, position)
-        local hrp = Utilities.GetHumanoidRootPart(character)
-        if hrp then
-            hrp.CFrame = CFrame.new(position)
-            return true
-        end
-        return false
-    end,
-    
-    -- Criar efeito visual
-    CreateEffect = function(position, effectType)
-        local effect = Instance.new("Part")
-        effect.Size = Vector3.new(5, 5, 5)
-        effect.Position = position
-        effect.Anchored = true
-        effect.CanCollide = false
-        effect.Transparency = 0.3
-        
-        if effectType == "fire" then
-            effect.BrickColor = BrickColor.new("Bright red")
-            effect.Material = Enum.Material.Neon
-        elseif effectType == "void" then
-            effect.BrickColor = BrickColor.new("Really black")
-            effect.Material = Enum.Material.Glass
-        elseif effectType == "electric" then
-            effect.BrickColor = BrickColor.new("Bright blue")
-            effect.Material = Enum.Material.Neon
-        end
-        
-        effect.Parent = Workspace
-        Debris:AddItem(effect, 3)
-        return effect
-    end,
-    
-    -- Criar som
-    CreateSound = function(id, parent, volume, looped)
-        local sound = Instance.new("Sound")
-        sound.SoundId = "rbxassetid://" .. id
-        sound.Volume = volume or 1
-        sound.Looped = looped or false
-        sound.Parent = parent
-        sound:Play()
-        return sound
-    end,
-    
-    -- Remover scripts do jogador
-    RemoveScripts = function(character)
-        if character then
-            for _, descendant in pairs(character:GetDescendants()) do
-                if descendant:IsA("LocalScript") or descendant:IsA("Script") then
-                    descendant:Destroy()
-                end
-            end
-            return true
-        end
-        return false
-    end,
-    
-    -- Congelar personagem
-    FreezeCharacter = function(character, freeze)
-        if character then
-            for _, part in pairs(character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.Anchored = freeze
-                end
-            end
-            return true
-        end
-        return false
-    end,
-    
-    -- Sistema de backup de estado
-    BackupState = function(player)
-        local character = Utilities.GetCharacter(player)
-        if character then
-            AntiScripter.BackupData[player.Name] = {
-                CFrame = Utilities.GetHumanoidRootPart(character).CFrame,
-                Anchored = Utilities.GetHumanoidRootPart(character).Anchored,
-                Transparency = {},
-                CanCollide = {}
-            }
-            
-            for _, part in pairs(character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    AntiScripter.BackupData[player.Name].Transparency[part.Name] = part.Transparency
-                    AntiScripter.BackupData[player.Name].CanCollide[part.Name] = part.CanCollide
-                end
-            end
-            
-            Logger.Success("Backup criado para " .. player.Name)
-            return true
-        end
-        return false
-    end,
-    
-    -- Restaurar estado
-    RestoreState = function(player)
-        if AntiScripter.BackupData[player.Name] then
-            local character = Utilities.GetCharacter(player)
-            if character then
-                local hrp = Utilities.GetHumanoidRootPart(character)
-                if hrp then
-                    hrp.CFrame = AntiScripter.BackupData[player.Name].CFrame
-                    hrp.Anchored = AntiScripter.BackupData[player.Name].Anchored
-                    
-                    for _, part in pairs(character:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            if AntiScripter.BackupData[player.Name].Transparency[part.Name] then
-                                part.Transparency = AntiScripter.BackupData[player.Name].Transparency[part.Name]
-                            end
-                            if AntiScripter.BackupData[player.Name].CanCollide[part.Name] then
-                                part.CanCollide = AntiScripter.BackupData[player.Name].CanCollide[part.Name]
-                            end
-                        end
-                    end
-                    
-                    Logger.Success("Estado restaurado para " .. player.Name)
-                    return true
-                end
-            end
-        end
-        return false
-    end
-}
-
-Logger.Success("Sistema de utilitários carregado")
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 1: VOID PRIMÁRIO
---===========================================================
-local Layer1 = {
-    Name = "VOID PRIMÁRIO",
-    Description = "Teleporte constante para o void profundo",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 1 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer1 = true
-        
-        Layer1.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Teleporte para void profundo
-                Utilities.TeleportTo(character, AntiScripter.VoidPositions.DeepVoid)
-                
-                -- Congelar no lugar
-                Utilities.FreezeCharacter(character, true)
-                
-                -- Efeito visual
-                Utilities.CreateEffect(AntiScripter.VoidPositions.DeepVoid, "void")
-            end
-        end)
-        
-        Logger.Success("Camada 1 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer1.Connection then
-            Layer1.Connection:Disconnect()
-            Layer1.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer1 = false
-        Logger.Info("Camada 1 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 2: VOID SECUNDÁRIO
---===========================================================
-local Layer2 = {
-    Name = "VOID SECUNDÁRIO",
-    Description = "Loop de queda infinita",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 2 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer2 = true
-        
-        Layer2.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                local hrp = Utilities.GetHumanoidRootPart(character)
-                if hrp then
-                    -- Queda infinita
-                    local currentPosition = hrp.Position
-                    local newPosition = Vector3.new(
-                        currentPosition.X,
-                        currentPosition.Y - 1000, -- Queda rápida
-                        currentPosition.Z
-                    )
-                    hrp.CFrame = CFrame.new(newPosition)
-                    
-                    -- Rotação caótica
-                    hrp.CFrame = hrp.CFrame * CFrame.Angles(
-                        math.rad(math.random(0, 360)),
-                        math.rad(math.random(0, 360)),
-                        math.rad(math.random(0, 360))
-                    )
-                    
-                    -- Efeito de queda
-                    Utilities.CreateEffect(newPosition, "electric")
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 2 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer2.Connection then
-            Layer2.Connection:Disconnect()
-            Layer2.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer2 = false
-        Logger.Info("Camada 2 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 3: VOID TERCIÁRIO
---===========================================================
-local Layer3 = {
-    Name = "VOID TERCIÁRIO",
-    Description = "Câmera forçada no void",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 3 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer3 = true
-        
-        -- Forçar câmera do jogador
-        local function ForceCamera()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                local camera = Workspace.CurrentCamera
-                if camera then
-                    camera.CameraType = Enum.CameraType.Scriptable
-                    camera.CFrame = CFrame.new(AntiScripter.VoidPositions.DeepVoid) * CFrame.new(0, 0, 10)
-                    camera.Focus = CFrame.new(AntiScripter.VoidPositions.DeepVoid)
-                end
-            end
-        end
-        
-        Layer3.Connection = RunService.RenderStepped:Connect(ForceCamera)
-        
-        Logger.Success("Camada 3 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer3.Connection then
-            Layer3.Connection:Disconnect()
-            Layer3.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer3 = false
-        Logger.Info("Camada 3 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 4: VOID QUATERNÁRIO
---===========================================================
-local Layer4 = {
-    Name = "VOID QUATERNÁRIO",
-    Description = "Remoção de partes do corpo",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 4 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer4 = true
-        
-        Layer4.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Remover partes periodicamente
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") and math.random(1, 100) <= 5 then -- 5% de chance
-                        part.Transparency = 1
-                        part.CanCollide = false
-                    end
-                end
-                
-                -- Destruir acessórios
-                for _, accessory in pairs(character:GetChildren()) do
-                    if accessory:IsA("Accessory") and math.random(1, 100) <= 10 then
-                        accessory:Destroy()
-                    end
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 4 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer4.Connection then
-            Layer4.Connection:Disconnect()
-            Layer4.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer4 = false
-        Logger.Info("Camada 4 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 5: VOID QUINTÁRIO
---===========================================================
-local Layer5 = {
-    Name = "VOID QUINTÁRIO",
-    Description = "Script injection anti-escape",
-    Active = false,
-    Connection = nil,
-    InjectedScripts = {},
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 5 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer5 = true
-        
-        -- Injeta scripts no jogador
-        local function InjectAntiEscapeScripts()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Script 1: Prevenir teleporte
-                local script1 = Instance.new("LocalScript")
-                script1.Name = "AntiEscape_1"
-                script1.Source = [[
-                    while true do
-                        game:GetService("RunService").Heartbeat:Wait()
-                        if script.Parent and script.Parent:FindFirstChild("HumanoidRootPart") then
-                            script.Parent.HumanoidRootPart.Anchored = true
-                            script.Parent.HumanoidRootPart.CFrame = CFrame.new(0, -100000, 0)
-                        end
-                    end
-                ]]
-                script1.Parent = character
-                table.insert(Layer5.InjectedScripts, script1)
-                
-                -- Script 2: Remover ferramentas
-                local script2 = Instance.new("LocalScript")
-                script2.Name = "AntiEscape_2"
-                script2.Source = [[
-                    game:GetService("RunService").Heartbeat:Connect(function()
-                        for _, item in pairs(script.Parent:GetChildren()) do
-                            if item:IsA("Tool") then
-                                item:Destroy()
-                            end
-                        end
-                    end)
-                ]]
-                script2.Parent = character
-                table.insert(Layer5.InjectedScripts, script2)
-                
-                -- Script 3: Desabilitar scripts
-                local script3 = Instance.new("LocalScript")
-                script3.Name = "AntiEscape_3"
-                script3.Source = [[
-                    while true do
-                        for _, v in pairs(script.Parent:GetDescendants()) do
-                            if v:IsA("LocalScript") and v.Name ~= "AntiEscape_1" and v.Name ~= "AntiEscape_2" and v.Name ~= "AntiEscape_3" then
-                                v.Disabled = true
-                                v:Destroy()
-                            end
-                        end
-                        wait(0.1)
-                    end
-                ]]
-                script3.Parent = character
-                table.insert(Layer5.InjectedScripts, script3)
-            end
-        end
-        
-        InjectAntiEscapeScripts()
-        
-        -- Reaplicar scripts periodicamente
-        Layer5.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                local hasScripts = false
-                for _, script in pairs(Layer5.InjectedScripts) do
-                    if script and script.Parent then
-                        hasScripts = true
-                        break
-                    end
-                end
-                
-                if not hasScripts then
-                    InjectAntiEscapeScripts()
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 5 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer5.Connection then
-            Layer5.Connection:Disconnect()
-            Layer5.Connection = nil
-        end
-        
-        -- Remover scripts injetados
-        for _, script in pairs(Layer5.InjectedScripts) do
-            if script and script.Parent then
-                script:Destroy()
-            end
-        end
-        Layer5.InjectedScripts = {}
-        
-        AntiScripter.ActiveLayers.Layer5 = false
-        Logger.Info("Camada 5 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 6: VOID SEXTÁRIO
---===========================================================
-local Layer6 = {
-    Name = "VOID SEXTÁRIO",
-    Description = "Network ownership hijack",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 6 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer6 = true
-        
-        Layer6.Connection = RunService.Stepped:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Tentar assumir propriedade das partes
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        pcall(function()
-                            part:SetNetworkOwner(nil) -- Remove network ownership
-                        end)
-                    end
-                end
-                
-                -- Criar parts falsas ao redor
-                if math.random(1, 100) <= 10 then
-                    local fakePart = Instance.new("Part")
-                    fakePart.Size = Vector3.new(5, 5, 5)
-                    fakePart.Position = character:GetPivot().Position + Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
-                    fakePart.Anchored = true
-                    fakePart.CanCollide = true
-                    fakePart.Transparency = 0.5
-                    fakePart.BrickColor = BrickColor.new("Bright red")
-                    fakePart.Parent = Workspace
-                    Debris:AddItem(fakePart, 2)
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 6 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer6.Connection then
-            Layer6.Connection:Disconnect()
-            Layer6.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer6 = false
-        Logger.Info("Camada 6 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 7: VOID SEPTENÁRIO
---===========================================================
-local Layer7 = {
-    Name = "VOID SEPTENÁRIO",
-    Description = "Physics lock extremo",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 7 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer7 = true
-        
-        Layer7.Connection = RunService.PreSimulation:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Lock de física extremo
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                        part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-                        part.Velocity = Vector3.new(0, 0, 0)
-                        part.RotVelocity = Vector3.new(0, 0, 0)
-                        part.CustomPhysicalProperties = PhysicalProperties.new(99999, 99999, 99999)
-                    end
-                end
-                
-                -- Forçar massa extrema
-                local humanoid = Utilities.GetHumanoid(character)
-                if humanoid then
-                    humanoid.HipHeight = 100
-                    humanoid.WalkSpeed = 0
-                    humanoid.JumpPower = 0
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 7 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer7.Connection then
-            Layer7.Connection:Disconnect()
-            Layer7.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer7 = false
-        Logger.Info("Camada 7 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 8: VOID OCTONÁRIO
---===========================================================
-local Layer8 = {
-    Name = "VOID OCTONÁRIO",
-    Description = "Sound spam torture",
-    Active = false,
-    Connection = nil,
-    Sounds = {},
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 8 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer8 = true
-        
-        local soundIds = {
-            137226529, -- Ear rape
-            138199203, -- High pitch
-            140429209, -- Static noise
-            144877350, -- Beep
-            146163054, -- Alarm
-            161470132, -- Siren
-            184702870, -- Void sound
-            200055437, -- Distortion
-            276972443, -- Horror
-            280025751  -- Metal screech
-        }
-        
-        Layer8.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Criar som aleatório
-                local soundId = soundIds[math.random(1, #soundIds)]
-                local sound = Utilities.CreateSound(soundId, character, 10, false)
-                table.insert(Layer8.Sounds, sound)
-                
-                -- Limitar quantidade de sons
-                if #Layer8.Sounds > 20 then
-                    for i = 1, 10 do
-                        if Layer8.Sounds[i] then
-                            Layer8.Sounds[i]:Stop()
-                            Layer8.Sounds[i]:Destroy()
-                        end
-                    end
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 8 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer8.Connection then
-            Layer8.Connection:Disconnect()
-            Layer8.Connection = nil
-        end
-        
-        -- Parar todos os sons
-        for _, sound in pairs(Layer8.Sounds) do
-            if sound then
-                sound:Stop()
-                sound:Destroy()
-            end
-        end
-        Layer8.Sounds = {}
-        
-        AntiScripter.ActiveLayers.Layer8 = false
-        Logger.Info("Camada 8 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 9: VOID NONÁRIO
---===========================================================
-local Layer9 = {
-    Name = "VOID NONÁRIO",
-    Description = "GUI destruction",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 9 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer9 = true
-        
-        local function DestroyGUIs()
-            -- Destruir GUIs do jogador
-            local playerGui = targetPlayer:FindFirstChild("PlayerGui")
-            if playerGui then
-                for _, gui in pairs(playerGui:GetChildren()) do
-                    if gui:IsA("ScreenGui") then
-                        gui.Enabled = false
-                        gui:Destroy()
-                    end
-                end
-            end
-            
-            -- Criar GUIs falsas
-            local fakeGui = Instance.new("ScreenGui")
-            fakeGui.Name = "VoidSystem_FakeGUI"
-            local textLabel = Instance.new("TextLabel")
-            textLabel.Size = UDim2.new(1, 0, 1, 0)
-            textLabel.Text = "VOID SYSTEM ACTIVE\nYOU ARE BEING PUNISHED\nESCAPE IMPOSSIBLE"
-            textLabel.TextColor3 = Color3.new(1, 0, 0)
-            textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
-            textLabel.Font = Enum.Font.SourceSansBold
-            textLabel.TextSize = 24
-            textLabel.Parent = fakeGui
-            
-            local targetPlayerGui = targetPlayer:FindFirstChild("PlayerGui")
-            if targetPlayerGui then
-                fakeGui.Parent = targetPlayerGui
-            end
-        end
-        
-        Layer9.Connection = RunService.Heartbeat:Connect(DestroyGUIs)
-        
-        Logger.Success("Camada 9 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer9.Connection then
-            Layer9.Connection:Disconnect()
-            Layer9.Connection = nil
-        end
-        
-        -- Remover GUIs falsas
-        for _, player in pairs(Players:GetPlayers()) do
-            local playerGui = player:FindFirstChild("PlayerGui")
-            if playerGui then
-                local fakeGui = playerGui:FindFirstChild("VoidSystem_FakeGUI")
-                if fakeGui then
-                    fakeGui:Destroy()
-                end
-            end
-        end
-        
-        AntiScripter.ActiveLayers.Layer9 = false
-        Logger.Info("Camada 9 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE PUNIÇÃO - CAMADA 10: VOID DÉCIMO
---===========================================================
-local Layer10 = {
-    Name = "VOID DÉCIMO",
-    Description = "Memory manipulation",
-    Active = false,
-    Connection = nil,
-    
-    Start = function(targetPlayer)
-        Logger.Info("Iniciando Camada 10 para " .. targetPlayer.Name)
-        AntiScripter.ActiveLayers.Layer10 = true
-        
-        Layer10.Connection = RunService.Heartbeat:Connect(function()
-            local character = Utilities.GetCharacter(targetPlayer)
-            if character then
-                -- Manipulação extrema
-                for _, part in pairs(character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        -- Mudar propriedades aleatoriamente
-                        part.BrickColor = BrickColor.new(math.random(1, 100))
-                        part.Material = Enum.Material[math.random(1, #Enum.Material:GetEnumItems())]
-                        part.Reflectance = math.random()
-                        part.Transparency = math.random()
-                        
-                        -- Efeito de flicker
-                        if math.random(1, 10) == 1 then
-                            part.Transparency = 1
-                            Utilities.Wait(0.05)
-                            part.Transparency = 0
-                        end
-                    end
-                end
-                
-                -- Criar clones falsos
-                if math.random(1, 100) <= 5 then
-                    local clone = character:Clone()
-                    for _, part in pairs(clone:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            part.Transparency = 0.7
-                            part.CanCollide = false
-                        end
-                    end
-                    clone:SetPrimaryPartCFrame(character:GetPivot() * CFrame.new(math.random(-50, 50), 0, math.random(-50, 50)))
-                    clone.Parent = Workspace
-                    Debris:AddItem(clone, 3)
-                end
-            end
-        end)
-        
-        Logger.Success("Camada 10 ativa para " .. targetPlayer.Name)
-        return true
-    end,
-    
-    Stop = function()
-        if Layer10.Connection then
-            Layer10.Connection:Disconnect()
-            Layer10.Connection = nil
-        end
-        AntiScripter.ActiveLayers.Layer10 = false
-        Logger.Info("Camada 10 desativada")
-        return true
-    end
-}
-
---===========================================================
--- SISTEMA DE CONTROLE DE CAMADAS
---===========================================================
-local LayerController = {
-    Layers = {Layer1, Layer2, Layer3, Layer4, Layer5, Layer6, Layer7, Layer8, Layer9, Layer10},
-    
-    StartAllLayers = function(targetPlayer)
-        Logger.Info("Iniciando TODAS as camadas para " .. targetPlayer.Name)
-        
-        -- Backup do estado
-        Utilities.BackupState(targetPlayer)
-        
-        -- Iniciar cada camada
-        local startedLayers = 0
-        for i, layer in pairs(LayerController.Layers) do
-            local success = layer.Start(targetPlayer)
-            if success then
-                startedLayers = startedLayers + 1
-                AntiScripter.Stats.LayersUsed = AntiScripter.Stats.LayersUsed + 1
-            end
-        end
-        
-        AntiScripter.Stats.ActivePunishments = AntiScripter.Stats.ActivePunishments + 1
-        AntiScripter.Stats.TotalPunishments = AntiScripter.Stats.TotalPunishments + 1
-        AntiScripter.Stats.PlayersAffected = AntiScripter.Stats.PlayersAffected + 1
-        
-        Logger.Success(startedLayers .. "/10 camadas ativas para " .. targetPlayer.Name)
-        return startedLayers
-    end,
-    
-    StopAllLayers = function(targetPlayer)
-        Logger.Info("Parando TODAS as camadas para " .. targetPlayer.Name)
-        
-        -- Parar cada camada
-        local stoppedLayers = 0
-        for i, layer in pairs(LayerController.Layers) do
-            local success = layer.Stop()
-            if success then
-                stoppedLayers = stoppedLayers + 1
-            end
-        end
-        
-        -- Restaurar estado
-        if targetPlayer then
-            Utilities.RestoreState(targetPlayer)
-        end
-        
-        AntiScripter.Stats.ActivePunishments = math.max(0, AntiScripter.Stats.ActivePunishments - 1)
-        
-        Logger.Success(stoppedLayers .. "/10 camadas paradas")
-        return stoppedLayers
-    end,
-    
-    GetActiveLayers = function()
-        local active = {}
-        for i, layer in pairs(LayerController.Layers) do
-            if layer.Active then
-                table.insert(active, layer.Name)
-            end
-        end
-        return active
-    end,
-    
-    GetLayerStatus = function()
-        local status = {}
-        for i, layer in pairs(LayerController.Layers) do
-            status[layer.Name] = layer.Active
-        end
-        return status
-    end
-}
-
-Logger.Success("Controlador de camadas carregado")
-
---===========================================================
--- INTERFACE GRÁFICA DETALHADA
---===========================================================
-if Interface.MainWindow then
-    Logger.Info("Criando interface gráfica...")
-    
-    -- ABA PRINCIPAL: Controle
-    local MainTab = Interface.MainWindow:NewTab("🎮 Controle Principal")
+    local yPosition = 10
     
     -- Seção: Seleção de Jogador
-    local PlayerSection = MainTab:NewSection("👥 Seleção de Jogador")
+    local section1 = Interface.CreateSection("👥 SELEÇÃO DE JOGADOR", yPosition, tab)
+    yPosition = yPosition + 50
     
-    -- Dropdown de jogadores
-    local playerDropdown = PlayerSection:NewDropdown(
-        "Selecionar Jogador",
-        "Clique para escolher quem punir",
-        {"Atualizando..."},
-        function(selected)
-            if selected and selected ~= "Nenhum jogador" then
-                AntiScripter.SelectedPlayer = selected
-                Logger.Success("Jogador selecionado: " .. selected)
-                
-                -- Atualizar GUI
-                if selectedPlayerLabel then
-                    selectedPlayerLabel:UpdateLabel("🎯 Jogador Selecionado: " .. selected)
-                end
-            end
-        end
-    )
+    -- Label de instrução
+    local instruction = Instance.new("TextLabel")
+    instruction.Name = "Instruction"
+    instruction.Size = UDim2.new(1, -20, 0, 30)
+    instruction.Position = UDim2.new(0, 10, 0, yPosition)
+    instruction.BackgroundTransparency = 1
+    instruction.Text = "Selecione um jogador para punir:"
+    instruction.TextColor3 = Color3.fromRGB(200, 200, 255)
+    instruction.Font = Enum.Font.SourceSans
+    instruction.TextSize = 14
+    instruction.TextXAlignment = Enum.TextXAlignment.Left
+    instruction.Parent = tab
+    yPosition = yPosition + 35
     
-    -- Label de jogador selecionado
-    local selectedPlayerLabel = PlayerSection:NewLabel("🎯 Jogador Selecionado: NENHUM")
+    -- Dropdown de jogadores (simulado com botão)
+    Interface.Elements.PlayerDropdown = Instance.new("TextButton")
+    Interface.Elements.PlayerDropdown.Name = "PlayerDropdown"
+    Interface.Elements.PlayerDropdown.Size = UDim2.new(1, -20, 0, 35)
+    Interface.Elements.PlayerDropdown.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.PlayerDropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+    Interface.Elements.PlayerDropdown.Text = "Clique para selecionar jogador"
+    Interface.Elements.PlayerDropdown.TextColor3 = Color3.new(1, 1, 1)
+    Interface.Elements.PlayerDropdown.Font = Enum.Font.SourceSansBold
+    Interface.Elements.PlayerDropdown.TextSize = 14
+    Interface.Elements.PlayerDropdown.Parent = tab
+    yPosition = yPosition + 45
+    
+    -- Label do jogador selecionado
+    Interface.Elements.SelectedPlayerLabel = Instance.new("TextLabel")
+    Interface.Elements.SelectedPlayerLabel.Name = "SelectedPlayerLabel"
+    Interface.Elements.SelectedPlayerLabel.Size = UDim2.new(1, -20, 0, 25)
+    Interface.Elements.SelectedPlayerLabel.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.SelectedPlayerLabel.BackgroundTransparency = 1
+    Interface.Elements.SelectedPlayerLabel.Text = "🎯 Jogador selecionado: NENHUM"
+    Interface.Elements.SelectedPlayerLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+    Interface.Elements.SelectedPlayerLabel.Font = Enum.Font.SourceSansBold
+    Interface.Elements.SelectedPlayerLabel.TextSize = 14
+    Interface.Elements.SelectedPlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
+    Interface.Elements.SelectedPlayerLabel.Parent = tab
+    yPosition = yPosition + 35
     
     -- Botão para atualizar lista
-    PlayerSection:NewButton(
-        "🔄 Atualizar Lista de Jogadores",
-        "Recarrega todos os jogadores online",
-        function()
-            local playerList = {}
-            local count = 0
-            
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer then
-                    table.insert(playerList, player.Name)
-                    count = count + 1
-                end
-            end
-            
-            if #playerList == 0 then
-                table.insert(playerList, "Nenhum jogador")
-            end
-            
-            playerDropdown:Refresh(playerList)
-            Logger.Success("Lista atualizada: " .. count .. " jogadores")
-        end
-    )
+    local updateButton = Instance.new("TextButton")
+    updateButton.Name = "UpdateButton"
+    updateButton.Size = UDim2.new(1, -20, 0, 30)
+    updateButton.Position = UDim2.new(0, 10, 0, yPosition)
+    updateButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    updateButton.Text = "🔄 Atualizar Lista de Jogadores"
+    updateButton.TextColor3 = Color3.new(1, 1, 1)
+    updateButton.Font = Enum.Font.SourceSansBold
+    updateButton.TextSize = 14
+    updateButton.Parent = tab
+    yPosition = yPosition + 40
+    
+    -- Separador
+    yPosition = yPosition + 10
     
     -- Seção: Sistema de Punição
-    local PunishmentSection = MainTab:NewSection("⚡ Sistema de Punição")
+    local section2 = Interface.CreateSection("⚡ SISTEMA DE PUNIÇÃO", yPosition, tab)
+    yPosition = yPosition + 50
     
     -- Botão PRINCIPAL de punição
-    local mainPunishButton = PunishmentSection:NewButton(
-        "🔴 INICIAR PUNIÇÃO COMPLETA (10 CAMADAS)",
-        "Ativa TODAS as camadas de punição simultaneamente",
-        function()
-            if not AntiScripter.SelectedPlayer or AntiScripter.SelectedPlayer == "Nenhum jogador" then
-                Logger.Error("Nenhum jogador selecionado!")
-                return
-            end
-            
-            local targetPlayer = Utilities.PlayerExists(AntiScripter.SelectedPlayer)
-            if not targetPlayer then
-                Logger.Error("Jogador não encontrado: " .. AntiScripter.SelectedPlayer)
-                return
-            end
-            
-            if AntiScripter.IsPunishing then
-                -- Parar punição
-                LayerController.StopAllLayers(targetPlayer)
-                AntiScripter.IsPunishing = false
-                AntiScripter.TargetPlayer = nil
-                mainPunishButton:UpdateText("🔴 INICIAR PUNIÇÃO COMPLETA (10 CAMADAS)")
-                Logger.Success("Punição PARADA para " .. targetPlayer.Name)
-                
-                -- Atualizar status
-                if punishmentStatusLabel then
-                    punishmentStatusLabel:UpdateLabel("📊 Status: INATIVO")
-                end
-            else
-                -- Iniciar punição
-                AntiScripter.TargetPlayer = targetPlayer
-                AntiScripter.IsPunishing = true
-                
-                local layersStarted = LayerController.StartAllLayers(targetPlayer)
-                
-                mainPunishButton:UpdateText("🟢 PARAR PUNIÇÃO (" .. targetPlayer.Name .. ")")
-                Logger.Success("Punição INICIADA para " .. targetPlayer.Name .. " (" .. layersStarted .. " camadas)")
-                
-                -- Atualizar status
-                if punishmentStatusLabel then
-                    punishmentStatusLabel:UpdateLabel("📊 Status: ATIVO - " .. layersStarted .. "/10 camadas")
-                end
-            end
-        end
-    )
+    Interface.Elements.MainPunishButton = Instance.new("TextButton")
+    Interface.Elements.MainPunishButton.Name = "MainPunishButton"
+    Interface.Elements.MainPunishButton.Size = UDim2.new(1, -20, 0, 50)
+    Interface.Elements.MainPunishButton.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.MainPunishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    Interface.Elements.MainPunishButton.Text = "🔴 INICIAR PUNIÇÃO COMPLETA"
+    Interface.Elements.MainPunishButton.TextColor3 = Color3.new(1, 1, 1)
+    Interface.Elements.MainPunishButton.Font = Enum.Font.SourceSansBold
+    Interface.Elements.MainPunishButton.TextSize = 16
+    Interface.Elements.MainPunishButton.TextWrapped = true
+    Interface.Elements.MainPunishButton.Parent = tab
+    yPosition = yPosition + 60
     
     -- Status da punição
-    local punishmentStatusLabel = PunishmentSection:NewLabel("📊 Status: INATIVO")
+    Interface.Elements.PunishmentStatus = Instance.new("TextLabel")
+    Interface.Elements.PunishmentStatus.Name = "PunishmentStatus"
+    Interface.Elements.PunishmentStatus.Size = UDim2.new(1, -20, 0, 30)
+    Interface.Elements.PunishmentStatus.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.PunishmentStatus.BackgroundTransparency = 1
+    Interface.Elements.PunishmentStatus.Text = "📊 Status: INATIVO"
+    Interface.Elements.PunishmentStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Interface.Elements.PunishmentStatus.Font = Enum.Font.SourceSansBold
+    Interface.Elements.PunishmentStatus.TextSize = 14
+    Interface.Elements.PunishmentStatus.TextXAlignment = Enum.TextXAlignment.Left
+    Interface.Elements.PunishmentStatus.Parent = tab
+    yPosition = yPosition + 35
     
-    -- Botão de teste individual
-    PunishmentSection:NewButton(
-        "🧪 TESTE RÁPIDO (Camada 1)",
-        "Testa apenas a primeira camada",
-        function()
-            if AntiScripter.SelectedPlayer and AntiScripter.SelectedPlayer ~= "Nenhum jogador" then
-                local targetPlayer = Utilities.PlayerExists(AntiScripter.SelectedPlayer)
-                if targetPlayer then
-                    Layer1.Start(targetPlayer)
-                    Utilities.Wait(3)
-                    Layer1.Stop()
-                    Logger.Success("Teste realizado em " .. targetPlayer.Name)
-                end
-            end
-        end
-    )
+    -- Botão de teste
+    local testButton = Instance.new("TextButton")
+    testButton.Name = "TestButton"
+    testButton.Size = UDim2.new(1, -20, 0, 35)
+    testButton.Position = UDim2.new(0, 10, 0, yPosition)
+    testButton.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+    testButton.Text = "🧪 TESTE RÁPIDO (Camada 1)"
+    testButton.TextColor3 = Color3.new(1, 1, 1)
+    testButton.Font = Enum.Font.SourceSansBold
+    testButton.TextSize = 14
+    testButton.Parent = tab
+    yPosition = yPosition + 45
     
-    -- ABA: Monitoramento
-    local MonitorTab = Interface.MainWindow:NewTab("📊 Monitoramento")
+    -- Ajustar canvas size
+    tab.CanvasSize = UDim2.new(0, 0, 0, yPosition + 50)
+end
+
+-- Criar aba de Monitoramento
+function Interface.CreateMonitorTab(tab)
+    Log("Criando aba de Monitoramento...", "INTERFACE")
+    
+    local yPosition = 10
     
     -- Seção: Status do Sistema
-    local SystemStatusSection = MonitorTab:NewSection("🖥️ Status do Sistema")
+    local section1 = Interface.CreateSection("🖥️ STATUS DO SISTEMA", yPosition, tab)
+    yPosition = yPosition + 50
     
-    -- Labels de status
-    local systemStatusLabel = SystemStatusSection:NewLabel("🟢 Sistema: ATIVO")
-    local versionLabel = SystemStatusSection:NewLabel("📦 Versão: " .. AntiScripter.Version)
-    local uptimeLabel = SystemStatusSection:NewLabel("⏱️ Uptime: 0s")
+    -- Status labels
+    Interface.Elements.SystemStatus = Instance.new("TextLabel")
+    Interface.Elements.SystemStatus.Name = "SystemStatus"
+    Interface.Elements.SystemStatus.Size = UDim2.new(1, -20, 0, 25)
+    Interface.Elements.SystemStatus.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.SystemStatus.BackgroundTransparency = 1
+    Interface.Elements.SystemStatus.Text = "🟢 Sistema: ATIVO"
+    Interface.Elements.SystemStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
+    Interface.Elements.SystemStatus.Font = Enum.Font.SourceSansBold
+    Interface.Elements.SystemStatus.TextSize = 14
+    Interface.Elements.SystemStatus.TextXAlignment = Enum.TextXAlignment.Left
+    Interface.Elements.SystemStatus.Parent = tab
+    yPosition = yPosition + 30
+    
+    Interface.Elements.UptimeLabel = Instance.new("TextLabel")
+    Interface.Elements.UptimeLabel.Name = "UptimeLabel"
+    Interface.Elements.UptimeLabel.Size = UDim2.new(1, -20, 0, 25)
+    Interface.Elements.UptimeLabel.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.UptimeLabel.BackgroundTransparency = 1
+    Interface.Elements.UptimeLabel.Text = "⏱️ Uptime: 0 segundos"
+    Interface.Elements.UptimeLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    Interface.Elements.UptimeLabel.Font = Enum.Font.SourceSans
+    Interface.Elements.UptimeLabel.TextSize = 14
+    Interface.Elements.UptimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    Interface.Elements.UptimeLabel.Parent = tab
+    yPosition = yPosition + 30
+    
+    Interface.Elements.PlayerCountLabel = Instance.new("TextLabel")
+    Interface.Elements.PlayerCountLabel.Name = "PlayerCountLabel"
+    Interface.Elements.PlayerCountLabel.Size = UDim2.new(1, -20, 0, 25)
+    Interface.Elements.PlayerCountLabel.Position = UDim2.new(0, 10, 0, yPosition)
+    Interface.Elements.PlayerCountLabel.BackgroundTransparency = 1
+    Interface.Elements.PlayerCountLabel.Text = "👥 Jogadores: Carregando..."
+    Interface.Elements.PlayerCountLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    Interface.Elements.PlayerCountLabel.Font = Enum.Font.SourceSans
+    Interface.Elements.PlayerCountLabel.TextSize = 14
+    Interface.Elements.PlayerCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+    Interface.Elements.PlayerCountLabel.Parent = tab
+    yPosition = yPosition + 40
+    
+    -- Separador
+    yPosition = yPosition + 10
     
     -- Seção: Status das Camadas
-    local LayersSection = MonitorTab:NewSection("🔧 Status das Camadas")
+    local section2 = Interface.CreateSection("🔧 STATUS DAS CAMADAS", yPosition, tab)
+    yPosition = yPosition + 50
     
-    -- Labels dinâmicos para cada camada
-    local layerLabels = {}
-    for i, layer in pairs(LayerController.Layers) do
-        layerLabels[layer.Name] = LayersSection:NewLabel("🔴 " .. layer.Name .. ": INATIVO")
+    -- Labels para cada camada
+    Interface.Elements.LayerStatus = {}
+    local layers = {
+        "1️⃣ VOID PRIMÁRIO",
+        "2️⃣ VOID SECUNDÁRIO",
+        "3️⃣ VOID TERCIÁRIO",
+        "4️⃣ VOID QUATERNÁRIO",
+        "5️⃣ VOID QUINTÁRIO",
+        "6️⃣ VOID SEXTÁRIO",
+        "7️⃣ VOID SEPTENÁRIO",
+        "8️⃣ VOID OCTONÁRIO",
+        "9️⃣ VOID NONÁRIO",
+        "🔟 VOID DÉCIMO"
+    }
+    
+    for i, layerName in ipairs(layers) do
+        local layerLabel = Instance.new("TextLabel")
+        layerLabel.Name = "Layer" .. i
+        layerLabel.Size = UDim2.new(1, -20, 0, 20)
+        layerLabel.Position = UDim2.new(0, 10, 0, yPosition)
+        layerLabel.BackgroundTransparency = 1
+        layerLabel.Text = layerName .. ": 🔴 INATIVO"
+        layerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        layerLabel.Font = Enum.Font.SourceSans
+        layerLabel.TextSize = 13
+        layerLabel.TextXAlignment = Enum.TextXAlignment.Left
+        layerLabel.Parent = tab
+        
+        Interface.Elements.LayerStatus[i] = layerLabel
+        yPosition = yPosition + 25
     end
     
-    -- Atualizador de status
-    spawn(function()
-        while true do
-            -- Atualizar uptime
-            AntiScripter.Stats.TimeActive = AntiScripter.Stats.TimeActive + 1
-            uptimeLabel:UpdateLabel("⏱️ Uptime: " .. AntiScripter.Stats.TimeActive .. "s")
-            
-            -- Atualizar status das camadas
-            for i, layer in pairs(LayerController.Layers) do
-                if layerLabels[layer.Name] then
-                    if layer.Active then
-                        layerLabels[layer.Name]:UpdateLabel("🟢 " .. layer.Name .. ": ATIVO")
-                    else
-                        layerLabels[layer.Name]:UpdateLabel("🔴 " .. layer.Name .. ": INATIVO")
-                    end
-                end
-            end
-            
-            Utilities.Wait(1)
-        end
-    end)
+    yPosition = yPosition + 10
     
-    -- ABA: Estatísticas
-    local StatsTab = Interface.MainWindow:NewTab("📈 Estatísticas")
+    -- Ajustar canvas size
+    tab.CanvasSize = UDim2.new(0, 0, 0, yPosition + 50)
+end
+
+-- Criar aba de Configurações
+function Interface.CreateConfigTab(tab)
+    Log("Criando aba de Configurações...", "INTERFACE")
     
-    -- Seção: Dados Gerais
-    local GeneralStatsSection = StatsTab:NewSection("📊 Dados Gerais")
+    local yPosition = 10
     
-    local totalPunishmentsLabel = GeneralStatsSection:NewLabel("🎯 Total de Punições: 0")
-    local activePunishmentsLabel = GeneralStatsSection:NewLabel("⚡ Punições Ativas: 0")
-    local layersUsedLabel = GeneralStatsSection:NewLabel("🔧 Camadas Usadas: 0")
-    local playersAffectedLabel = GeneralStatsSection:NewLabel("👥 Jogadores Afetados: 0")
-    
-    -- Atualizador de estatísticas
-    spawn(function()
-        while true do
-            totalPunishmentsLabel:UpdateLabel("🎯 Total de Punições: " .. AntiScripter.Stats.TotalPunishments)
-            activePunishmentsLabel:UpdateLabel("⚡ Punições Ativas: " .. AntiScripter.Stats.ActivePunishments)
-            layersUsedLabel:UpdateLabel("🔧 Camadas Usadas: " .. AntiScripter.Stats.LayersUsed)
-            playersAffectedLabel:UpdateLabel("👥 Jogadores Afetados: " .. AntiScripter.Stats.PlayersAffected)
-            Utilities.Wait(0.5)
-        end
-    end)
-    
-    -- ABA: Configurações
-    local ConfigTab = Interface.MainWindow:NewTab("⚙️ Configurações")
-    
-    -- Seção: Configurações do Sistema
-    local SystemConfigSection = ConfigTab:NewSection("🛠️ Configurações do Sistema")
+    -- Seção: Configurações
+    local section1 = Interface.CreateSection("⚙️ CONFIGURAÇÕES", yPosition, tab)
+    yPosition = yPosition + 50
     
     -- Toggles
-    SystemConfigSection:NewToggle(
-        "Auto-atualizar Lista",
-        "Atualiza automaticamente a lista de jogadores",
-        function(state)
-            AntiScripter.Settings.AutoRefreshPlayers = state
-            Logger.Info("Auto-atualização: " .. (state and "ATIVADA" or "DESATIVADA"))
-        end
-    )
+    Interface.Elements.Toggles = {}
     
-    SystemConfigSection:NewToggle(
-        "Modo Extremo",
-        "Ativa funcionalidades mais agressivas",
-        function(state)
-            AntiScripter.Settings.ExtremeMode = state
-            Logger.Info("Modo Extremo: " .. (state and "ATIVADO" or "DESATIVADO"))
-        end
-    )
+    local toggleSettings = {
+        {"Auto-atualizar Lista", true},
+        {"Modo Extremo", true},
+        {"Mostrar Debug", true},
+        {"Anti-Anti-Script", true}
+    }
     
-    SystemConfigSection:NewToggle(
-        "Mostrar Debug Info",
-        "Mostra informações de debug no console",
-        function(state)
-            AntiScripter.Settings.ShowDebugInfo = state
-            Logger.Info("Debug Info: " .. (state and "ATIVADO" or "DESATIVADO"))
-        end
-    )
+    for i, setting in ipairs(toggleSettings) do
+        local toggleFrame = Instance.new("Frame")
+        toggleFrame.Name = "Toggle" .. i
+        toggleFrame.Size = UDim2.new(1, -20, 0, 30)
+        toggleFrame.Position = UDim2.new(0, 10, 0, yPosition)
+        toggleFrame.BackgroundTransparency = 1
+        toggleFrame.Parent = tab
+        
+        local toggleText = Instance.new("TextLabel")
+        toggleText.Name = "ToggleText"
+        toggleText.Size = UDim2.new(0.7, 0, 1, 0)
+        toggleText.Position = UDim2.new(0, 0, 0, 0)
+        toggleText.BackgroundTransparency = 1
+        toggleText.Text = setting[1]
+        toggleText.TextColor3 = Color3.fromRGB(200, 200, 255)
+        toggleText.Font = Enum.Font.SourceSans
+        toggleText.TextSize = 14
+        toggleText.TextXAlignment = Enum.TextXAlignment.Left
+        toggleText.Parent = toggleFrame
+        
+        local toggleButton = Instance.new("TextButton")
+        toggleButton.Name = "ToggleButton"
+        toggleButton.Size = UDim2.new(0, 50, 0, 25)
+        toggleButton.Position = UDim2.new(1, -50, 0.5, -12.5)
+        toggleButton.BackgroundColor3 = setting[2] and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+        toggleButton.Text = setting[2] and "ON" or "OFF"
+        toggleButton.TextColor3 = Color3.new(1, 1, 1)
+        toggleButton.Font = Enum.Font.SourceSansBold
+        toggleButton.TextSize = 12
+        toggleButton.Parent = toggleFrame
+        
+        Interface.Elements.Toggles[setting[1]] = {button = toggleButton, state = setting[2]}
+        
+        toggleButton.MouseButton1Click:Connect(function()
+            local currentState = Interface.Elements.Toggles[setting[1]].state
+            local newState = not currentState
+            
+            Interface.Elements.Toggles[setting[1]].state = newState
+            toggleButton.BackgroundColor3 = newState and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+            toggleButton.Text = newState and "ON" or "OFF"
+            
+            Log("Configuração '" .. setting[1] .. "' alterada para: " .. (newState and "ON" or "OFF"), "CONFIG")
+        end)
+        
+        yPosition = yPosition + 35
+    end
     
-    SystemConfigSection:NewToggle(
-        "Anti-Anti-Script",
-        "Tenta contornar anti-cheats",
-        function(state)
-            AntiScripter.Settings.AntiAntiScript = state
-            Logger.Info("Anti-Anti-Script: " .. (state and "ATIVADO" or "DESATIVADO"))
-        end
-    )
+    yPosition = yPosition + 20
     
     -- Seção: Ferramentas
-    local ToolsSection = ConfigTab:NewSection("🔧 Ferramentas")
+    local section2 = Interface.CreateSection("🔧 FERRAMENTAS", yPosition, tab)
+    yPosition = yPosition + 50
     
-    ToolsSection:NewButton(
-        "🔄 Forçar Atualização de Lista",
-        "Atualiza lista manualmente",
-        function()
-            local playerList = {}
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer then
-                    table.insert(playerList, player.Name)
-                end
-            end
-            
-            if #playerList == 0 then
-                table.insert(playerList, "Nenhum jogador")
-            end
-            
-            playerDropdown:Refresh(playerList)
-            Logger.Success("Lista forçada atualizada: " .. (#playerList) .. " jogadores")
-        end
-    )
+    -- Botão para ver jogadores
+    local viewPlayersButton = Instance.new("TextButton")
+    viewPlayersButton.Name = "ViewPlayersButton"
+    viewPlayersButton.Size = UDim2.new(1, -20, 0, 35)
+    viewPlayersButton.Position = UDim2.new(0, 10, 0, yPosition)
+    viewPlayersButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    viewPlayersButton.Text = "📋 Ver Todos os Jogadores (Console)"
+    viewPlayersButton.TextColor3 = Color3.new(1, 1, 1)
+    viewPlayersButton.Font = Enum.Font.SourceSansBold
+    viewPlayersButton.TextSize = 14
+    viewPlayersButton.Parent = tab
+    yPosition = yPosition + 45
     
-    ToolsSection:NewButton(
-        "📋 Ver Todos os Jogadores",
-        "Mostra lista completa no console",
-        function()
-            print("\n=== LISTA DE JOGADORES ===")
-            for _, player in pairs(Players:GetPlayers()) do
-                print("👤 " .. player.Name .. " (UserId: " .. player.UserId .. ")")
-            end
-            print("===========================\n")
-        end
-    )
-    
-    ToolsSection:NewButton(
-        "🧹 Limpar Todos os Efeitos",
-        "Remove todos os efeitos visuais",
-        function()
-            for _, layer in pairs(LayerController.Layers) do
-                layer.Stop()
-            end
-            Logger.Success("Todos os efeitos limpos")
-        end
-    )
+    -- Botão para limpar efeitos
+    local clearEffectsButton = Instance.new("TextButton")
+    clearEffectsButton.Name = "ClearEffectsButton"
+    clearEffectsButton.Size = UDim2.new(1, -20, 0, 35)
+    clearEffectsButton.Position = UDim2.new(0, 10, 0, yPosition)
+    clearEffectsButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
+    clearEffectsButton.Text = "🧹 Limpar Todos os Efeitos"
+    clearEffectsButton.TextColor3 = Color3.new(1, 1, 1)
+    clearEffectsButton.Font = Enum.Font.SourceSansBold
+    clearEffectsButton.TextSize = 14
+    clearEffectsButton.Parent = tab
+    yPosition = yPosition + 50
     
     -- Seção: Emergência
-    local EmergencySection = ConfigTab:NewSection("🚨 Controles de Emergência")
+    local section3 = Interface.CreateSection("🚨 EMERGÊNCIA", yPosition, tab)
+    yPosition = yPosition + 50
     
-    EmergencySection:NewButton(
-        "⛔ PARAR TUDO IMEDIATAMENTE",
-        "Para todas as punições e restaura jogadores",
-        function()
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer then
-                    LayerController.StopAllLayers(player)
-                    Utilities.RestoreState(player)
-                end
-            end
-            
-            AntiScripter.IsPunishing = false
-            AntiScripter.TargetPlayer = nil
-            mainPunishButton:UpdateText("🔴 INICIAR PUNIÇÃO COMPLETA (10 CAMADAS)")
-            
-            if punishmentStatusLabel then
-                punishmentStatusLabel:UpdateLabel("📊 Status: PARADO (EMERGÊNCIA)")
-            end
-            
-            Logger.Success("🚨 EMERGÊNCIA: Todas as punições paradas!")
-        end
-    )
+    -- Botão de parar tudo
+    local emergencyButton = Instance.new("TextButton")
+    emergencyButton.Name = "EmergencyButton"
+    emergencyButton.Size = UDim2.new(1, -20, 0, 40)
+    emergencyButton.Position = UDim2.new(0, 10, 0, yPosition)
+    emergencyButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    emergencyButton.Text = "⛔ PARAR TUDO IMEDIATAMENTE"
+    emergencyButton.TextColor3 = Color3.new(1, 1, 1)
+    emergencyButton.Font = Enum.Font.SourceSansBold
+    emergencyButton.TextSize = 16
+    emergencyButton.TextWrapped = true
+    emergencyButton.Parent = tab
+    yPosition = yPosition + 50
     
-    EmergencySection:NewButton(
-        "🔒 FECHAR SISTEMA",
-        "Fecha completamente o sistema",
-        function()
-            for _, player in pairs(Players:GetPlayers()) do
-                LayerController.StopAllLayers(player)
-            end
-            
-            Interface.MainWindow:Destroy()
-            Logger.Success("Sistema fechado pelo usuário")
-        end
-    )
+    -- Ajustar canvas size
+    tab.CanvasSize = UDim2.new(0, 0, 0, yPosition + 50)
+end
+
+-- Função auxiliar para criar seções
+function Interface.CreateSection(title, yPosition, parent)
+    local section = Instance.new("Frame")
+    section.Name = "Section_" .. string.gsub(title, "[^%w]", "")
+    section.Size = UDim2.new(1, -20, 0, 40)
+    section.Position = UDim2.new(0, 10, 0, yPosition)
+    section.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+    section.BorderSizePixel = 0
+    section.Parent = parent
     
-    -- Atualizar lista inicial
-    spawn(function()
-        Utilities.Wait(2)
-        local playerList = {}
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                table.insert(playerList, player.Name)
-            end
+    local sectionTitle = Instance.new("TextLabel")
+    sectionTitle.Name = "SectionTitle"
+    sectionTitle.Size = UDim2.new(1, 0, 1, 0)
+    sectionTitle.Position = UDim2.new(0, 10, 0, 0)
+    sectionTitle.BackgroundTransparency = 1
+    sectionTitle.Text = title
+    sectionTitle.TextColor3 = Color3.fromRGB(0, 255, 255)
+    sectionTitle.Font = Enum.Font.SourceSansBold
+    sectionTitle.TextSize = 16
+    sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+    sectionTitle.Parent = section
+    
+    return section
+end
+
+-- Alternar visibilidade da interface
+function Interface.Toggle()
+    Interface.IsOpen = not Interface.IsOpen
+    
+    if Interface.MainGUI then
+        Interface.MainGUI.Enabled = Interface.IsOpen
+        Log("Interface " .. (Interface.IsOpen and "aberta" or "fechada"), "INTERFACE")
+    else
+        Interface.Create()
+    end
+end
+
+-- Atualizar label
+function Interface.UpdateLabel(labelName, text, color)
+    if Interface.Elements[labelName] then
+        Interface.Elements[labelName].Text = text
+        if color then
+            Interface.Elements[labelName].TextColor3 = color
         end
+    end
+end
+
+-- Atualizar status da camada
+function Interface.UpdateLayerStatus(layerIndex, isActive)
+    if Interface.Elements.LayerStatus and Interface.Elements.LayerStatus[layerIndex] then
+        local layerLabel = Interface.Elements.LayerStatus[layerIndex]
+        if isActive then
+            layerLabel.Text = string.gsub(layerLabel.Text, ": 🔴 INATIVO", ": 🟢 ATIVO")
+            layerLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            layerLabel.Text = string.gsub(layerLabel.Text, ": 🟢 ATIVO", ": 🔴 INATIVO")
+            layerLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    end
+end
+
+-- Criar popup de seleção de jogadores
+function Interface.CreatePlayerSelection()
+    local players = Players:GetPlayers()
+    local playerNames = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+    
+    if #playerNames == 0 then
+        playerNames = {"Nenhum jogador disponível"}
+    end
+    
+    -- Criar popup
+    local popup = Instance.new("Frame")
+    popup.Name = "PlayerSelectionPopup"
+    popup.Size = UDim2.new(0, 300, 0, 400)
+    popup.Position = UDim2.new(0.5, -150, 0.5, -200)
+    popup.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+    popup.BorderSizePixel = 2
+    popup.BorderColor3 = Color3.fromRGB(0, 255, 255)
+    popup.Parent = Interface.MainGUI
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(0, 0, 50)
+    title.Text = "👥 SELECIONAR JOGADOR"
+    title.TextColor3 = Color3.fromRGB(0, 255, 255)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 18
+    title.Parent = popup
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -35, 0, 5)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.TextSize = 16
+    closeButton.Parent = popup
+    
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(1, -20, 1, -80)
+    scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, #playerNames * 40)
+    scrollFrame.Parent = popup
+    
+    local yPos = 5
+    for _, playerName in ipairs(playerNames) do
+        local playerButton = Instance.new("TextButton")
+        playerButton.Size = UDim2.new(1, -10, 0, 35)
+        playerButton.Position = UDim2.new(0, 5, 0, yPos)
+        playerButton.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+        playerButton.Text = playerName
+        playerButton.TextColor3 = Color3.new(1, 1, 1)
+        playerButton.Font = Enum.Font.SourceSans
+        playerButton.TextSize = 14
+        playerButton.Parent = scrollFrame
         
-        if #playerList == 0 then
-            table.insert(playerList, "Nenhum jogador")
-        end
+        playerButton.MouseButton1Click:Connect(function()
+            if playerName ~= "Nenhum jogador disponível" then
+                Interface.UpdateLabel("SelectedPlayerLabel", "🎯 Jogador selecionado: " .. playerName, Color3.fromRGB(255, 255, 100))
+                Interface.Elements.PlayerDropdown.Text = "Jogador: " .. playerName
+                AntiScripter.SelectedPlayer = playerName
+                Log("Jogador selecionado: " .. playerName, "SELECTION")
+            end
+            popup:Destroy()
+        end)
         
-        playerDropdown:Refresh(playerList)
-        Logger.Success("Lista inicial carregada: " .. #playerList .. " jogadores")
+        yPos = yPos + 40
+    end
+    
+    closeButton.MouseButton1Click:Connect(function()
+        popup:Destroy()
     end)
+end
+
+-- Inicializar interface
+Interface.Create()
+
+--===========================================================
+-- SISTEMA DE PUNIÇÃO - SIMPLIFICADO MAS EFETIVO
+--===========================================================
+local AntiScripter = {
+    SelectedPlayer = nil,
+    IsPunishing = false,
+    TargetPlayer = nil,
+    VoidLoop = nil,
+    Layers = {},
+    Uptime = 0
+}
+
+-- Sistema de camadas simplificado
+function AntiScripter.StartPunishment()
+    if not AntiScripter.SelectedPlayer then
+        Log("❌ Nenhum jogador selecionado!", "ERROR")
+        return false
+    end
     
-    -- Auto-atualização da lista
-    spawn(function()
-        while true do
-            if AntiScripter.Settings.AutoRefreshPlayers then
-                local playerList = {}
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer then
-                        table.insert(playerList, player.Name)
+    local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
+    if not targetPlayer then
+        Log("❌ Jogador não encontrado: " .. AntiScripter.SelectedPlayer, "ERROR")
+        return false
+    end
+    
+    AntiScripter.IsPunishing = true
+    AntiScripter.TargetPlayer = targetPlayer
+    
+    -- Atualizar interface
+    Interface.UpdateLabel("PunishmentStatus", "📊 Status: 🔴 PUNINDO " .. targetPlayer.Name, Color3.fromRGB(255, 0, 0))
+    Interface.Elements.MainPunishButton.Text = "🟢 PARAR PUNIÇÃO (" .. targetPlayer.Name .. ")"
+    Interface.Elements.MainPunishButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    
+    -- Iniciar todas as camadas
+    for i = 1, 10 do
+        Interface.UpdateLayerStatus(i, true)
+    end
+    
+    Log("🚀 Punição INICIADA para " .. targetPlayer.Name, "PUNISHMENT")
+    
+    -- Iniciar loop principal
+    AntiScripter.VoidLoop = RunService.Heartbeat:Connect(function()
+        if AntiScripter.IsPunishing and targetPlayer and targetPlayer.Character then
+            local character = targetPlayer.Character
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") or 
+                                     character:FindFirstChild("Torso") or
+                                     character:FindFirstChild("UpperTorso")
+            
+            if humanoidRootPart then
+                -- CAMADA 1: Teleporte para void profundo
+                humanoidRootPart.CFrame = CFrame.new(0, -100000, 0)
+                
+                -- CAMADA 2: Congelar no lugar
+                humanoidRootPart.Anchored = true
+                
+                -- CAMADA 3: Remover ferramentas
+                for _, item in pairs(character:GetChildren()) do
+                    if item:IsA("Tool") then
+                        item:Destroy()
                     end
                 end
                 
-                if #playerList == 0 then
-                    table.insert(playerList, "Nenhum jogador")
+                -- CAMADA 4: Desabilitar scripts
+                for _, script in pairs(character:GetDescendants()) do
+                    if script:IsA("LocalScript") then
+                        script.Disabled = true
+                    end
                 end
                 
-                playerDropdown:Refresh(playerList)
+                -- CAMADA 5: Efeito visual
+                if math.random(1, 10) == 1 then
+                    local effect = Instance.new("Part")
+                    effect.Size = Vector3.new(5, 5, 5)
+                    effect.Position = humanoidRootPart.Position
+                    effect.Anchored = true
+                    effect.CanCollide = false
+                    effect.Transparency = 0.5
+                    effect.BrickColor = BrickColor.new("Bright red")
+                    effect.Material = Enum.Material.Neon
+                    effect.Parent = Workspace
+                    game:GetService("Debris"):AddItem(effect, 1)
+                end
             end
-            Utilities.Wait(5)
         end
     end)
     
-    Logger.Success("Interface gráfica criada com sucesso!")
+    return true
+end
+
+function AntiScripter.StopPunishment()
+    AntiScripter.IsPunishing = false
+    
+    if AntiScripter.VoidLoop then
+        AntiScripter.VoidLoop:Disconnect()
+        AntiScripter.VoidLoop = nil
+    end
+    
+    -- Restaurar jogador se ainda estiver no jogo
+    if AntiScripter.TargetPlayer and AntiScripter.TargetPlayer.Character then
+        local character = AntiScripter.TargetPlayer.Character
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") or 
+                                 character:FindFirstChild("Torso") or
+                                 character:FindFirstChild("UpperTorso")
+        
+        if humanoidRootPart then
+            humanoidRootPart.Anchored = false
+            humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+        end
+    end
+    
+    -- Atualizar interface
+    Interface.UpdateLabel("PunishmentStatus", "📊 Status: 🟢 INATIVO", Color3.fromRGB(0, 255, 0))
+    Interface.Elements.MainPunishButton.Text = "🔴 INICIAR PUNIÇÃO COMPLETA"
+    Interface.Elements.MainPunishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    
+    -- Desativar todas as camadas
+    for i = 1, 10 do
+        Interface.UpdateLayerStatus(i, false)
+    end
+    
+    Log("🛑 Punição PARADA", "PUNISHMENT")
+    
+    AntiScripter.TargetPlayer = nil
+    return true
 end
 
 --===========================================================
--- SISTEMA DE AUTO-DEFESA
+-- CONFIGURAR EVENTOS DA INTERFACE
 --===========================================================
-local DefenseSystem = {
-    AntiKick = function()
-        -- Prevenir kick do jogo
-        local mt = getrawmetatable(game)
-        local oldNamecall = mt.__namecall
-        
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            local args = {...}
-            
-            if method == "Kick" or method == "kick" then
-                Logger.Warning("Tentativa de kick detectada e bloqueada!")
-                return nil
+Log("Configurando eventos da interface...", "INTERFACE")
+
+-- Botão dropdown de jogadores
+Interface.Elements.PlayerDropdown.MouseButton1Click:Connect(function()
+    Interface.CreatePlayerSelection()
+end)
+
+-- Botão de atualizar lista
+local updateButton = Interface.Elements.PlayerDropdown.Parent:FindFirstChild("UpdateButton")
+if updateButton then
+    updateButton.MouseButton1Click:Connect(function()
+        Interface.CreatePlayerSelection()
+    end)
+end
+
+-- Botão principal de punição
+Interface.Elements.MainPunishButton.MouseButton1Click:Connect(function()
+    if AntiScripter.IsPunishing then
+        AntiScripter.StopPunishment()
+    else
+        AntiScripter.StartPunishment()
+    end
+end)
+
+-- Botão de teste
+local testButton = Interface.Elements.MainPunishButton.Parent:FindFirstChild("TestButton")
+if testButton then
+    testButton.MouseButton1Click:Connect(function()
+        if AntiScripter.SelectedPlayer then
+            local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
+            if targetPlayer and targetPlayer.Character then
+                local humanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    humanoidRootPart.CFrame = CFrame.new(0, -50000, 0)
+                    humanoidRootPart.Anchored = true
+                    Log("🧪 Teste realizado em " .. targetPlayer.Name, "TEST")
+                    
+                    -- Restaurar após 3 segundos
+                    task.wait(3)
+                    humanoidRootPart.Anchored = false
+                    humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+                end
             end
-            
-            return oldNamecall(self, unpack(args))
-        end)
-        setreadonly(mt, true)
+        end
+    end)
+end
+
+-- Botão de ver jogadores
+local viewPlayersButton = Interface.Tabs.Config:FindFirstChild("ViewPlayersButton")
+if viewPlayersButton then
+    viewPlayersButton.MouseButton1Click:Connect(function()
+        print("\n" .. string.rep("=", 50))
+        print("👥 LISTA DE JOGADORES:")
+        print(string.rep("-", 50))
         
-        Logger.Success("Sistema Anti-Kick ativado")
-    end,
-    
-    AntiTeleport = function()
-        -- Monitorar tentativas de teleporte
-        LocalPlayer.OnTeleport:Connect(function(state)
-            if state == Enum.TeleportState.Started then
-                Logger.Warning("Tentativa de teleporte detectada!")
-                -- Pode adicionar lógica adicional aqui
-            end
-        end)
-        
-        Logger.Success("Sistema Anti-Teleporte ativado")
-    end,
-    
-    AntiDetection = function()
-        -- Ocultar scripts
-        for _, script in pairs(game:GetDescendants()) do
-            if script:IsA("LocalScript") and script.Name:find("AntiScripter") then
-                script.Archivable = false
+        local count = 0
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                print("👤 " .. player.Name .. " (ID: " .. player.UserId .. ")")
+                count = count + 1
             end
         end
         
-        -- Limpar logs
-        game:GetService("ScriptContext").Error:Connect(function(message)
-            if message:find("AntiScripter") then
-                Logger.Debug("Erro detectado e silenciado: " .. message)
-                return nil
-            end
-        end)
+        print(string.rep("-", 50))
+        print("Total: " .. count .. " jogador(es)")
+        print(string.rep("=", 50) .. "\n")
         
-        Logger.Success("Sistema Anti-Detecção ativado")
-    end
-}
+        Log("Lista de jogadores exibida no console", "INFO")
+    end)
+end
 
--- Ativar sistemas de defesa
-DefenseSystem.AntiKick()
-DefenseSystem.AntiTeleport()
-DefenseSystem.AntiDetection()
+-- Botão de limpar efeitos
+local clearEffectsButton = Interface.Tabs.Config:FindFirstChild("ClearEffectsButton")
+if clearEffectsButton then
+    clearEffectsButton.MouseButton1Click:Connect(function()
+        AntiScripter.StopPunishment()
+        Log("🧹 Todos os efeitos foram limpos", "CLEANUP")
+    end)
+end
+
+-- Botão de emergência
+local emergencyButton = Interface.Tabs.Config:FindFirstChild("EmergencyButton")
+if emergencyButton then
+    emergencyButton.MouseButton1Click:Connect(function()
+        AntiScripter.StopPunishment()
+        
+        -- Restaurar todos os jogadores
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local character = player.Character
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") or 
+                                         character:FindFirstChild("Torso")
+                
+                if humanoidRootPart then
+                    humanoidRootPart.Anchored = false
+                    humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+                end
+            end
+        end
+        
+        Log("🚨 EMERGÊNCIA: Todas as punições paradas!", "EMERGENCY")
+    end)
+end
 
 --===========================================================
--- SISTEMA DE INICIALIZAÇÃO
+-- SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL
 --===========================================================
-Logger.Info("Inicializando sistema completo...")
+Log("Iniciando sistema de atualização...", "SYSTEM")
 
--- Mensagem de inicialização
 spawn(function()
-    Utilities.Wait(1)
-    
-    local welcomeMessage = [[
+    while true do
+        -- Atualizar uptime
+        AntiScripter.Uptime = AntiScripter.Uptime + 1
+        Interface.UpdateLabel("UptimeLabel", "⏱️ Uptime: " .. AntiScripter.Uptime .. " segundos")
+        
+        -- Atualizar contagem de jogadores
+        local playerCount = #Players:GetPlayers() - 1
+        Interface.UpdateLabel("PlayerCountLabel", "👥 Jogadores: " .. playerCount)
+        
+        -- Atualizar status do sistema
+        local systemStatus = AntiScripter.IsPunishing and "🔴 PUNINDO" or "🟢 ATIVO"
+        local statusColor = AntiScripter.IsPunishing and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+        Interface.UpdateLabel("SystemStatus", "🖥️ Sistema: " .. systemStatus, statusColor)
+        
+        task.wait(1)
+    end
+end)
+
+--===========================================================
+-- CONTROLES DE TECLADO
+--===========================================================
+UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed then
+        -- F9 para alternar interface
+        if input.KeyCode == Enum.KeyCode.F9 then
+            Interface.Toggle()
+        
+        -- Delete para fechar tudo
+        elseif input.KeyCode == Enum.KeyCode.Delete then
+            Log("DELETE pressionado - Fechando sistema...", "SYSTEM")
+            
+            -- Parar punições
+            AntiScripter.StopPunishment()
+            
+            -- Fechar interface
+            if Interface.MainGUI then
+                Interface.MainGUI:Destroy()
+            end
+            
+            -- Mensagem final
+            print("\n" .. string.rep("=", 60))
+            print("🛑 ANTI-SCRIPTER SYSTEM FECHADO")
+            print("⏱️ Tempo ativo: " .. AntiScripter.Uptime .. " segundos")
+            print("👤 Jogador atual: " .. LocalPlayer.Name)
+            print(string.rep("=", 60) .. "\n")
+        end
+    end
+end)
+
+--===========================================================
+-- MENSAGEM DE INICIALIZAÇÃO
+--===========================================================
+task.wait(1)
+
+print([[
     
     ╔══════════════════════════════════════════════════════════╗
     ║                                                          ║
-    ║      🚀 ANTI-SCRIPTER ULTIMATE SYSTEM v]] .. AntiScripter.Version .. [[       ║
+    ║      🚀 ANTI-SCRIPTER ULTIMATE SYSTEM                   ║
     ║                                                          ║
     ║          ✅ Sistema carregado com sucesso!               ║
-    ║          👥 Jogadores: ]] .. #Players:GetPlayers() .. [[                                   ║
-    ║          🔧 Camadas prontas: 10/10                      ║
-    ║          🛡️  Sistemas de defesa: ATIVOS                 ║
+    ║          👤 Seu nome: ]] .. LocalPlayer.Name .. [[                      ║
+    ║          🔧 Interface: PRONTA (F9 para abrir/fechar)     ║
+    ║          🎮 Controles:                                  ║
+    ║            • F9 = Abrir/Fechar menu                     ║
+    ║            • DELETE = Fechar sistema                    ║
     ║                                                          ║
     ║   📋 INSTRUÇÕES:                                        ║
-    ║   1. Abra a interface (F9)                             ║
-    ║   2. Selecione um jogador                              ║
-    ║   3. Clique em "INICIAR PUNIÇÃO COMPLETA"              ║
-    ║   4. Para parar, clique novamente                      ║
-    ║   5. Pressione DELETE para fechar                      ║
+    ║   1. Abra o menu (F9)                                   ║
+    ║   2. Clique em "Clique para selecionar jogador"         ║
+    ║   3. Selecione um jogador na lista                      ║
+    ║   4. Clique em "INICIAR PUNIÇÃO COMPLETA"               ║
+    ║   5. Para parar, clique novamente no botão              ║
     ║                                                          ║
     ║   ⚠️  USE ESTE PODER COM RESPONSABILIDADE!              ║
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
     
-    ]]
-    
-    print(welcomeMessage)
-end)
+]])
 
--- Sistema de limpeza ao fechar
-UserInputService.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.Delete then
-        Logger.Warning("Usuário pressionou DELETE - Fechando sistema...")
-        
-        -- Parar todas as camadas
-        for _, player in pairs(Players:GetPlayers()) do
-            LayerController.StopAllLayers(player)
-        end
-        
-        -- Fechar interface
-        if Interface.MainWindow then
-            Interface.MainWindow:Destroy()
-        end
-        
-        -- Mensagem final
-        print("\n" .. string.rep("=", 60))
-        print("🛑 ANTI-SCRIPTER SYSTEM FECHADO")
-        print("⏱️  Tempo ativo: " .. AntiScripter.Stats.TimeActive .. " segundos")
-        print("🎯 Total de punições: " .. AntiScripter.Stats.TotalPunishments)
-        print("👥 Jogadores afetados: " .. AntiScripter.Stats.PlayersAffected)
-        print(string.rep("=", 60) .. "\n")
-    end
-end)
+Log("Sistema totalmente inicializado e funcional!", "SUCCESS")
+Log("Pressione F9 para abrir/fechar o menu", "INFO")
+Log("Pressione DELETE para fechar o sistema", "INFO")
 
--- Monitorar tempo de atividade
-spawn(function()
-    while true do
-        AntiScripter.Stats.TimeActive = AntiScripter.Stats.TimeActive + 1
-        Utilities.Wait(1)
-    end
-end)
-
-Logger.Success("===============================================")
-Logger.Success("ANTI-SCRIPTER ULTIMATE SYSTEM INICIALIZADO!")
-Logger.Success("Versão: " .. AntiScripter.Version)
-Logger.Success("Jogadores online: " .. #Players:GetPlayers())
-Logger.Success("10 Camadas de punição carregadas")
-Logger.Success("Sistemas de defesa ativos")
-Logger.Success("Interface gráfica pronta (F9 para abrir)")
-Logger.Success("Pressione DELETE para fechar o sistema")
-Logger.Success("===============================================")
-
--- Retornar instância do sistema para possível uso externo
+-- Retornar instância do sistema
 return {
+    Interface = Interface,
     System = AntiScripter,
-    Controller = LayerController,
-    Utilities = Utilities,
-    Logger = Logger
+    Log = Log
 }
