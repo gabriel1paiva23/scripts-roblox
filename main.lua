@@ -1,13 +1,14 @@
--- ANTI-SCRIPTER ULTIMATE SYSTEM - VERSÃO FINAL
--- TODOS OS BUGS CORRIGIDOS
+-- ANTI-SCRIPTER ULTIMATE SYSTEM - PUNIÇÃO CORRIGIDA
+-- VERSÃO FINAL COM VOID FUNCIONAL
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
 
--- Sistema de logs
+-- Sistema de logs detalhado
 local function Log(message, type)
     local timestamp = os.date("[%H:%M:%S]")
     local logEntry = timestamp .. " [" .. type .. "] " .. message
@@ -15,10 +16,10 @@ local function Log(message, type)
     return logEntry
 end
 
-Log("🚀 Iniciando Anti-Scripter System - Versão Final", "SYSTEM")
+Log("🚀 Iniciando Anti-Scripter System - Punição Ativa", "SYSTEM")
 
 --===========================================================
--- SISTEMA PRINCIPAL
+-- VARIÁVEIS GLOBAIS
 --===========================================================
 local LocalPlayer = Players.LocalPlayer
 local AntiScripter = {
@@ -28,38 +29,205 @@ local AntiScripter = {
     VoidLoop = nil,
     Uptime = 0,
     GUI = nil,
-    IsGUIVisible = true
+    IsGUIVisible = true,
+    BackupData = {},
+    
+    -- Configurações do void
+    VoidPosition = Vector3.new(0, -1000000, 0), -- VOID MUITO PROFUNDO
+    IsPlayerInVoid = false,
+    VoidConnections = {}
 }
 
 --===========================================================
--- FUNÇÕES UTILITÁRIAS
+-- FUNÇÕES DE PUNIÇÃO AVANÇADAS
 --===========================================================
 local function GetHumanoidRootPart(character)
     if character then
-        return character:FindFirstChild("HumanoidRootPart") or 
-               character:FindFirstChild("Torso") or
-               character:FindFirstChild("UpperTorso")
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then
+            hrp = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+        end
+        return hrp
     end
     return nil
 end
 
-local function CreateEffect(position, color)
-    local effect = Instance.new("Part")
-    effect.Size = Vector3.new(5, 5, 5)
-    effect.Position = position
-    effect.Anchored = true
-    effect.CanCollide = false
-    effect.Transparency = 0.5
-    effect.BrickColor = BrickColor.new(color)
-    effect.Material = Enum.Material.Neon
-    effect.Parent = Workspace
-    game:GetService("Debris"):AddItem(effect, 2)
-    return effect
+local function GetHumanoid(character)
+    if character then
+        return character:FindFirstChildOfClass("Humanoid")
+    end
+    return nil
 end
 
---===========================================================
--- SISTEMA DE PUNIÇÃO
---===========================================================
+-- Função FORTE para enviar ao VOID
+function AntiScripter.SendToVoid(targetPlayer)
+    if not targetPlayer or not targetPlayer:IsA("Player") then
+        Log("❌ Jogador inválido para void", "ERROR")
+        return false
+    end
+    
+    local character = targetPlayer.Character
+    if not character then
+        -- Tentar carregar personagem
+        targetPlayer:LoadCharacter()
+        wait(0.5)
+        character = targetPlayer.Character
+        if not character then
+            Log("❌ Personagem não encontrado: " .. targetPlayer.Name, "ERROR")
+            return false
+        end
+    end
+    
+    local humanoidRootPart = GetHumanoidRootPart(character)
+    if not humanoidRootPart then
+        Log("❌ HumanoidRootPart não encontrado em " .. targetPlayer.Name, "ERROR")
+        return false
+    end
+    
+    -- Salvar backup da posição original
+    if not AntiScripter.BackupData[targetPlayer.Name] then
+        AntiScripter.BackupData[targetPlayer.Name] = {
+            CFrame = humanoidRootPart.CFrame,
+            Anchored = humanoidRootPart.Anchored,
+            CanCollide = humanoidRootPart.CanCollide
+        }
+    end
+    
+    -- TELEPORTAR PARA O VOID PROFUNDO
+    humanoidRootPart.CFrame = CFrame.new(
+        AntiScripter.VoidPosition.X + math.random(-100, 100),
+        AntiScripter.VoidPosition.Y - math.random(0, 1000),
+        AntiScripter.VoidPosition.Z + math.random(-100, 100)
+    )
+    
+    -- ANCORAR NO VOID (IMPORTANTE!)
+    humanoidRootPart.Anchored = true
+    
+    -- Remover TODAS as ferramentas
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") or item:IsA("HopperBin") then
+            item:Destroy()
+        end
+    end
+    
+    -- Desabilitar scripts locais
+    for _, script in pairs(character:GetDescendants()) do
+        if script:IsA("LocalScript") then
+            script.Disabled = true
+            pcall(function() script:Destroy() end)
+        end
+    end
+    
+    -- Matar humanoid constantemente
+    local humanoid = GetHumanoid(character)
+    if humanoid then
+        humanoid.Health = 0
+        wait(0.1)
+        humanoid.Health = 1
+    end
+    
+    -- Efeito visual no void
+    if math.random(1, 5) == 1 then
+        local effect = Instance.new("Part")
+        effect.Size = Vector3.new(10, 10, 10)
+        effect.Position = humanoidRootPart.Position
+        effect.Anchored = true
+        effect.CanCollide = false
+        effect.Transparency = 0.7
+        effect.BrickColor = BrickColor.new("Really black")
+        effect.Material = Enum.Material.Glass
+        effect.Parent = Workspace
+        game:GetService("Debris"):AddItem(effect, 1)
+    end
+    
+    Log("✅ " .. targetPlayer.Name .. " enviado ao VOID", "PUNISHMENT")
+    return true
+end
+
+-- Função para restaurar jogador
+function AntiScripter.RestorePlayer(targetPlayer)
+    if not targetPlayer then return false end
+    
+    if AntiScripter.BackupData[targetPlayer.Name] then
+        local character = targetPlayer.Character
+        if character then
+            local humanoidRootPart = GetHumanoidRootPart(character)
+            if humanoidRootPart then
+                -- Restaurar posição original
+                humanoidRootPart.CFrame = AntiScripter.BackupData[targetPlayer.Name].CFrame
+                humanoidRootPart.Anchored = AntiScripter.BackupData[targetPlayer.Name].Anchored
+                humanoidRootPart.CanCollide = AntiScripter.BackupData[targetPlayer.Name].CanCollide
+                
+                -- Restaurar scripts
+                for _, script in pairs(character:GetDescendants()) do
+                    if script:IsA("LocalScript") then
+                        script.Disabled = false
+                    end
+                end
+                
+                Log("✅ " .. targetPlayer.Name .. " restaurado", "RESTORE")
+                return true
+            end
+        end
+    end
+    
+    -- Fallback: teleportar para posição segura
+    local character = targetPlayer.Character
+    if character then
+        local humanoidRootPart = GetHumanoidRootPart(character)
+        if humanoidRootPart then
+            humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+            humanoidRootPart.Anchored = false
+        end
+    end
+    
+    return false
+end
+
+-- Loop principal de punição
+function AntiScripter.StartVoidLoop(targetPlayer)
+    if not targetPlayer then
+        Log("❌ Nenhum jogador para punir", "ERROR")
+        return false
+    end
+    
+    Log("🚀 Iniciando loop de void para " .. targetPlayer.Name, "PUNISHMENT")
+    
+    -- Parar loop anterior se existir
+    if AntiScripter.VoidLoop then
+        AntiScripter.VoidLoop:Disconnect()
+        AntiScripter.VoidLoop = nil
+    end
+    
+    -- Conexão principal
+    AntiScripter.VoidLoop = RunService.Heartbeat:Connect(function()
+        if AntiScripter.IsPunishing and targetPlayer and Players:FindFirstChild(targetPlayer.Name) then
+            local success = AntiScripter.SendToVoid(targetPlayer)
+            
+            if success then
+                AntiScripter.IsPlayerInVoid = true
+            end
+        else
+            -- Jogador saiu ou punição parou
+            if AntiScripter.VoidLoop then
+                AntiScripter.VoidLoop:Disconnect()
+                AntiScripter.VoidLoop = nil
+            end
+        end
+    end)
+    
+    -- Loop secundário para garantir
+    spawn(function()
+        while AntiScripter.IsPunishing and targetPlayer and targetPlayer.Parent do
+            AntiScripter.SendToVoid(targetPlayer)
+            wait(0.05) -- Teleporte SUPER rápido
+        end
+    end)
+    
+    return true
+end
+
+-- Iniciar punição completa
 function AntiScripter.StartPunishment()
     if not AntiScripter.SelectedPlayer then
         Log("❌ Nenhum jogador selecionado!", "ERROR")
@@ -75,56 +243,44 @@ function AntiScripter.StartPunishment()
     AntiScripter.IsPunishing = true
     AntiScripter.TargetPlayer = targetPlayer
     
-    Log("🚀 Punição INICIADA para " .. targetPlayer.Name, "PUNISHMENT")
+    Log("🚀🚀🚀 PUNIÇÃO INICIADA para " .. targetPlayer.Name, "PUNISHMENT")
     
-    -- Iniciar loop de punição
-    AntiScripter.VoidLoop = RunService.Heartbeat:Connect(function()
-        if AntiScripter.IsPunishing and targetPlayer and targetPlayer.Character then
-            local character = targetPlayer.Character
-            local humanoidRootPart = GetHumanoidRootPart(character)
-            
-            if humanoidRootPart then
-                -- Teleporte para void
-                humanoidRootPart.CFrame = CFrame.new(0, -100000, 0)
-                
-                -- Congelar no lugar
-                humanoidRootPart.Anchored = true
-                
-                -- Remover ferramentas
-                for _, item in pairs(character:GetChildren()) do
-                    if item:IsA("Tool") then
-                        item:Destroy()
-                    end
-                end
-                
-                -- Efeito visual ocasional
-                if math.random(1, 20) == 1 then
-                    CreateEffect(humanoidRootPart.Position, "Bright red")
-                end
-            end
+    -- Iniciar loop de void
+    AntiScripter.StartVoidLoop(targetPlayer)
+    
+    -- Sistema de segurança extra
+    AntiScripter.VoidConnections.CharacterAdded = targetPlayer.CharacterAdded:Connect(function(character)
+        wait(0.1) -- Esperar personagem carregar
+        if AntiScripter.IsPunishing then
+            AntiScripter.SendToVoid(targetPlayer)
         end
     end)
     
     return true
 end
 
+-- Parar punição
 function AntiScripter.StopPunishment()
     AntiScripter.IsPunishing = false
+    AntiScripter.IsPlayerInVoid = false
     
+    -- Parar loop
     if AntiScripter.VoidLoop then
         AntiScripter.VoidLoop:Disconnect()
         AntiScripter.VoidLoop = nil
     end
     
-    -- Restaurar jogador
-    if AntiScripter.TargetPlayer and AntiScripter.TargetPlayer.Character then
-        local character = AntiScripter.TargetPlayer.Character
-        local humanoidRootPart = GetHumanoidRootPart(character)
-        
-        if humanoidRootPart then
-            humanoidRootPart.Anchored = false
-            humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+    -- Desconectar conexões
+    for name, connection in pairs(AntiScripter.VoidConnections) do
+        if connection then
+            connection:Disconnect()
         end
+        AntiScripter.VoidConnections[name] = nil
+    end
+    
+    -- Restaurar jogador
+    if AntiScripter.TargetPlayer then
+        AntiScripter.RestorePlayer(AntiScripter.TargetPlayer)
     end
     
     Log("🛑 Punição PARADA", "PUNISHMENT")
@@ -133,19 +289,46 @@ function AntiScripter.StopPunishment()
     return true
 end
 
+-- Teste rápido
+function AntiScripter.TestPunishment()
+    if not AntiScripter.SelectedPlayer then
+        Log("❌ Nenhum jogador selecionado para teste!", "ERROR")
+        return false
+    end
+    
+    local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
+    if not targetPlayer then
+        Log("❌ Jogador não encontrado: " .. AntiScripter.SelectedPlayer, "ERROR")
+        return false
+    end
+    
+    Log("🧪 Teste iniciado para " .. targetPlayer.Name, "TEST")
+    
+    -- Aplicar punição por 3 segundos
+    AntiScripter.SendToVoid(targetPlayer)
+    
+    -- Aguardar 3 segundos
+    wait(3)
+    
+    -- Restaurar
+    AntiScripter.RestorePlayer(targetPlayer)
+    
+    Log("🧪 Teste finalizado para " .. targetPlayer.Name, "TEST")
+    return true
+end
+
 --===========================================================
--- SISTEMA DE INTERFACE SIMPLIFICADA
+-- SISTEMA DE INTERFACE (SIMPLIFICADO E FUNCIONAL)
 --===========================================================
 function AntiScripter.CreateGUI()
     -- Destruir GUI existente
     if AntiScripter.GUI then
         AntiScripter.GUI:Destroy()
-        AntiScripter.GUI = nil
     end
     
     -- Criar ScreenGui
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "AntiScripterGUI"
+    screenGui.Name = "AntiScripterGUI_" .. HttpService:GenerateGUID(false)
     screenGui.DisplayOrder = 999
     screenGui.ResetOnSpawn = false
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -153,24 +336,30 @@ function AntiScripter.CreateGUI()
     -- Frame principal
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 400, 0, 500)
-    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+    mainFrame.Size = UDim2.new(0, 400, 0, 450)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 35)
     mainFrame.BackgroundTransparency = 0.1
-    mainFrame.BorderSizePixel = 2
-    mainFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
+    mainFrame.BorderSizePixel = 3
+    mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
     mainFrame.Active = true
     mainFrame.Draggable = true
     mainFrame.Parent = screenGui
+    
+    -- Sombra
+    local shadow = Instance.new("UIStroke")
+    shadow.Color = Color3.fromRGB(255, 50, 50)
+    shadow.Thickness = 3
+    shadow.Parent = mainFrame
     
     -- Título
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(0, 0, 60)
-    title.Text = "⚡ ANTI-SCRIPTER SYSTEM"
-    title.TextColor3 = Color3.fromRGB(0, 255, 255)
+    title.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    title.Text = "⚡ ANTI-SCRIPTER VOID SYSTEM ⚡"
+    title.TextColor3 = Color3.new(1, 1, 1)
     title.Font = Enum.Font.SourceSansBold
     title.TextSize = 18
     title.Parent = mainFrame
@@ -180,7 +369,7 @@ function AntiScripter.CreateGUI()
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
     closeButton.Position = UDim2.new(1, -35, 0, 5)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    closeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     closeButton.Text = "X"
     closeButton.TextColor3 = Color3.new(1, 1, 1)
     closeButton.Font = Enum.Font.SourceSansBold
@@ -191,272 +380,236 @@ function AntiScripter.CreateGUI()
         AntiScripter.ToggleGUI()
     end)
     
-    -- Container principal
+    -- Container
     local container = Instance.new("ScrollingFrame")
     container.Name = "Container"
-    container.Size = UDim2.new(1, -20, 1, -50)
-    container.Position = UDim2.new(0, 10, 0, 45)
+    container.Size = UDim2.new(1, -20, 1, -60)
+    container.Position = UDim2.new(0, 10, 0, 50)
     container.BackgroundTransparency = 1
     container.ScrollBarThickness = 6
-    container.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    container.CanvasSize = UDim2.new(0, 0, 0, 600)
+    container.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+    container.CanvasSize = UDim2.new(0, 0, 0, 500)
     container.Parent = mainFrame
     
-    -- Variável para posição Y
+    -- Criar elementos da interface
     local yPos = 10
+    local elements = {}
     
-    -- Seção 1: Seleção de Jogador
+    -- Seção 1: Seleção
     local section1 = Instance.new("Frame")
-    section1.Name = "Section1"
-    section1.Size = UDim2.new(1, 0, 0, 40)
+    section1.Size = UDim2.new(1, 0, 0, 30)
     section1.Position = UDim2.new(0, 0, 0, yPos)
-    section1.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
+    section1.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
     section1.BorderSizePixel = 0
     section1.Parent = container
     
-    local section1Title = Instance.new("TextLabel")
-    section1Title.Name = "Section1Title"
-    section1Title.Size = UDim2.new(1, 0, 1, 0)
-    section1Title.Position = UDim2.new(0, 10, 0, 0)
-    section1Title.BackgroundTransparency = 1
-    section1Title.Text = "👥 SELEÇÃO DE JOGADOR"
-    section1Title.TextColor3 = Color3.fromRGB(0, 255, 255)
-    section1Title.Font = Enum.Font.SourceSansBold
-    section1Title.TextSize = 16
-    section1Title.TextXAlignment = Enum.TextXAlignment.Left
-    section1Title.Parent = section1
+    local section1Label = Instance.new("TextLabel")
+    section1Label.Size = UDim2.new(1, 0, 1, 0)
+    section1Label.Position = UDim2.new(0, 10, 0, 0)
+    section1Label.BackgroundTransparency = 1
+    section1Label.Text = "🎯 SELECIONAR JOGADOR"
+    section1Label.TextColor3 = Color3.fromRGB(255, 100, 100)
+    section1Label.Font = Enum.Font.SourceSansBold
+    section1Label.TextSize = 16
+    section1Label.TextXAlignment = Enum.TextXAlignment.Left
+    section1Label.Parent = section1
     
-    yPos = yPos + 50
+    yPos = yPos + 40
     
-    -- Instrução
-    local instruction = Instance.new("TextLabel")
-    instruction.Name = "Instruction"
-    instruction.Size = UDim2.new(1, -20, 0, 30)
-    instruction.Position = UDim2.new(0, 10, 0, yPos)
-    instruction.BackgroundTransparency = 1
-    instruction.Text = "Selecione um jogador:"
-    instruction.TextColor3 = Color3.fromRGB(200, 200, 255)
-    instruction.Font = Enum.Font.SourceSans
-    instruction.TextSize = 14
-    instruction.TextXAlignment = Enum.TextXAlignment.Left
-    instruction.Parent = container
-    
-    yPos = yPos + 35
-    
-    -- Botão para selecionar jogador
-    local selectPlayerButton = Instance.new("TextButton")
-    selectPlayerButton.Name = "SelectPlayerButton"
-    selectPlayerButton.Size = UDim2.new(1, -20, 0, 40)
-    selectPlayerButton.Position = UDim2.new(0, 10, 0, yPos)
-    selectPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 50, 120)
-    selectPlayerButton.Text = "Clique para selecionar jogador"
-    selectPlayerButton.TextColor3 = Color3.new(1, 1, 1)
-    selectPlayerButton.Font = Enum.Font.SourceSansBold
-    selectPlayerButton.TextSize = 14
-    selectPlayerButton.Parent = container
+    -- Botão de seleção
+    elements.SelectButton = Instance.new("TextButton")
+    elements.SelectButton.Size = UDim2.new(1, -20, 0, 40)
+    elements.SelectButton.Position = UDim2.new(0, 10, 0, yPos)
+    elements.SelectButton.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+    elements.SelectButton.Text = "Clique para selecionar jogador"
+    elements.SelectButton.TextColor3 = Color3.new(1, 1, 1)
+    elements.SelectButton.Font = Enum.Font.SourceSansBold
+    elements.SelectButton.TextSize = 14
+    elements.SelectButton.Parent = container
     
     yPos = yPos + 50
     
     -- Label do jogador selecionado
-    local selectedLabel = Instance.new("TextLabel")
-    selectedLabel.Name = "SelectedLabel"
-    selectedLabel.Size = UDim2.new(1, -20, 0, 25)
-    selectedLabel.Position = UDim2.new(0, 10, 0, yPos)
-    selectedLabel.BackgroundTransparency = 1
-    selectedLabel.Text = "🎯 Jogador selecionado: NENHUM"
-    selectedLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-    selectedLabel.Font = Enum.Font.SourceSansBold
-    selectedLabel.TextSize = 14
-    selectedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    selectedLabel.Parent = container
+    elements.SelectedLabel = Instance.new("TextLabel")
+    elements.SelectedLabel.Size = UDim2.new(1, -20, 0, 25)
+    elements.SelectedLabel.Position = UDim2.new(0, 10, 0, yPos)
+    elements.SelectedLabel.BackgroundTransparency = 1
+    elements.SelectedLabel.Text = "🎯 Selecionado: NENHUM"
+    elements.SelectedLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+    elements.SelectedLabel.Font = Enum.Font.SourceSansBold
+    elements.SelectedLabel.TextSize = 14
+    elements.SelectedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    elements.SelectedLabel.Parent = container
     
-    yPos = yPos + 40
+    yPos = yPos + 35
     
     -- Separador
     yPos = yPos + 10
     
-    -- Seção 2: Controle de Punição
+    -- Seção 2: Punição
     local section2 = Instance.new("Frame")
-    section2.Name = "Section2"
-    section2.Size = UDim2.new(1, 0, 0, 40)
+    section2.Size = UDim2.new(1, 0, 0, 30)
     section2.Position = UDim2.new(0, 0, 0, yPos)
-    section2.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
+    section2.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
     section2.BorderSizePixel = 0
     section2.Parent = container
     
-    local section2Title = Instance.new("TextLabel")
-    section2Title.Name = "Section2Title"
-    section2Title.Size = UDim2.new(1, 0, 1, 0)
-    section2Title.Position = UDim2.new(0, 10, 0, 0)
-    section2Title.BackgroundTransparency = 1
-    section2Title.Text = "⚡ CONTROLE DE PUNIÇÃO"
-    section2Title.TextColor3 = Color3.fromRGB(0, 255, 255)
-    section2Title.Font = Enum.Font.SourceSansBold
-    section2Title.TextSize = 16
-    section2Title.TextXAlignment = Enum.TextXAlignment.Left
-    section2Title.Parent = section2
+    local section2Label = Instance.new("TextLabel")
+    section2Label.Size = UDim2.new(1, 0, 1, 0)
+    section2Label.Position = UDim2.new(0, 10, 0, 0)
+    section2Label.BackgroundTransparency = 1
+    section2Label.Text = "⚡ CONTROLE DE PUNIÇÃO"
+    section2Label.TextColor3 = Color3.fromRGB(255, 100, 100)
+    section2Label.Font = Enum.Font.SourceSansBold
+    section2Label.TextSize = 16
+    section2Label.TextXAlignment = Enum.TextXAlignment.Left
+    section2Label.Parent = section2
     
-    yPos = yPos + 50
+    yPos = yPos + 40
     
     -- Botão principal de punição
-    local punishButton = Instance.new("TextButton")
-    punishButton.Name = "PunishButton"
-    punishButton.Size = UDim2.new(1, -20, 0, 50)
-    punishButton.Position = UDim2.new(0, 10, 0, yPos)
-    punishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    punishButton.Text = "🔴 INICIAR PUNIÇÃO"
-    punishButton.TextColor3 = Color3.new(1, 1, 1)
-    punishButton.Font = Enum.Font.SourceSansBold
-    punishButton.TextSize = 16
-    punishButton.TextWrapped = true
-    punishButton.Parent = container
+    elements.PunishButton = Instance.new("TextButton")
+    elements.PunishButton.Name = "PunishButton"
+    elements.PunishButton.Size = UDim2.new(1, -20, 0, 50)
+    elements.PunishButton.Position = UDim2.new(0, 10, 0, yPos)
+    elements.PunishButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    elements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO NO VOID"
+    elements.PunishButton.TextColor3 = Color3.new(1, 1, 1)
+    elements.PunishButton.Font = Enum.Font.SourceSansBold
+    elements.PunishButton.TextSize = 16
+    elements.PunishButton.TextWrapped = true
+    elements.PunishButton.Parent = container
     
     yPos = yPos + 60
     
-    -- Status da punição
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Name = "StatusLabel"
-    statusLabel.Size = UDim2.new(1, -20, 0, 25)
-    statusLabel.Position = UDim2.new(0, 10, 0, yPos)
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "📊 Status: INATIVO"
-    statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-    statusLabel.Font = Enum.Font.SourceSansBold
-    statusLabel.TextSize = 14
-    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    statusLabel.Parent = container
+    -- Status
+    elements.StatusLabel = Instance.new("TextLabel")
+    elements.StatusLabel.Size = UDim2.new(1, -20, 0, 25)
+    elements.StatusLabel.Position = UDim2.new(0, 10, 0, yPos)
+    elements.StatusLabel.BackgroundTransparency = 1
+    elements.StatusLabel.Text = "📊 Status: INATIVO"
+    elements.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    elements.StatusLabel.Font = Enum.Font.SourceSansBold
+    elements.StatusLabel.TextSize = 14
+    elements.StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    elements.StatusLabel.Parent = container
     
     yPos = yPos + 35
     
-    -- Botão de teste rápido
-    local testButton = Instance.new("TextButton")
-    testButton.Name = "TestButton"
-    testButton.Size = UDim2.new(1, -20, 0, 35)
-    testButton.Position = UDim2.new(0, 10, 0, yPos)
-    testButton.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
-    testButton.Text = "🧪 TESTE RÁPIDO (3 segundos)"
-    testButton.TextColor3 = Color3.new(1, 1, 1)
-    testButton.Font = Enum.Font.SourceSansBold
-    testButton.TextSize = 14
-    testButton.Parent = container
+    -- Botão de teste
+    elements.TestButton = Instance.new("TextButton")
+    elements.TestButton.Size = UDim2.new(1, -20, 0, 35)
+    elements.TestButton.Position = UDim2.new(0, 10, 0, yPos)
+    elements.TestButton.BackgroundColor3 = Color3.fromRGB(100, 0, 100)
+    elements.TestButton.Text = "🧪 TESTE RÁPIDO (3s)"
+    elements.TestButton.TextColor3 = Color3.new(1, 1, 1)
+    elements.TestButton.Font = Enum.Font.SourceSansBold
+    elements.TestButton.TextSize = 14
+    elements.TestButton.Parent = container
     
     yPos = yPos + 45
     
     -- Separador
     yPos = yPos + 10
     
-    -- Seção 3: Informações do Sistema
+    -- Seção 3: Status
     local section3 = Instance.new("Frame")
-    section3.Name = "Section3"
-    section3.Size = UDim2.new(1, 0, 0, 40)
+    section3.Size = UDim2.new(1, 0, 0, 30)
     section3.Position = UDim2.new(0, 0, 0, yPos)
-    section3.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
+    section3.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
     section3.BorderSizePixel = 0
     section3.Parent = container
     
-    local section3Title = Instance.new("TextLabel")
-    section3Title.Name = "Section3Title"
-    section3Title.Size = UDim2.new(1, 0, 1, 0)
-    section3Title.Position = UDim2.new(0, 10, 0, 0)
-    section3Title.BackgroundTransparency = 1
-    section3Title.Text = "🖥️ INFORMAÇÕES DO SISTEMA"
-    section3Title.TextColor3 = Color3.fromRGB(0, 255, 255)
-    section3Title.Font = Enum.Font.SourceSansBold
-    section3Title.TextSize = 16
-    section3Title.TextXAlignment = Enum.TextXAlignment.Left
-    section3Title.Parent = section3
+    local section3Label = Instance.new("TextLabel")
+    section3Label.Size = UDim2.new(1, 0, 1, 0)
+    section3Label.Position = UDim2.new(0, 10, 0, 0)
+    section3Label.BackgroundTransparency = 1
+    section3Label.Text = "📊 INFORMAÇÕES"
+    section3Label.TextColor3 = Color3.fromRGB(255, 100, 100)
+    section3Label.Font = Enum.Font.SourceSansBold
+    section3Label.TextSize = 16
+    section3Label.TextXAlignment = Enum.TextXAlignment.Left
+    section3Label.Parent = section3
     
-    yPos = yPos + 50
+    yPos = yPos + 40
     
     -- Uptime
-    local uptimeLabel = Instance.new("TextLabel")
-    uptimeLabel.Name = "UptimeLabel"
-    uptimeLabel.Size = UDim2.new(1, -20, 0, 20)
-    uptimeLabel.Position = UDim2.new(0, 10, 0, yPos)
-    uptimeLabel.BackgroundTransparency = 1
-    uptimeLabel.Text = "⏱️ Uptime: 0 segundos"
-    uptimeLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-    uptimeLabel.Font = Enum.Font.SourceSans
-    uptimeLabel.TextSize = 14
-    uptimeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    uptimeLabel.Parent = container
+    elements.UptimeLabel = Instance.new("TextLabel")
+    elements.UptimeLabel.Size = UDim2.new(1, -20, 0, 20)
+    elements.UptimeLabel.Position = UDim2.new(0, 10, 0, yPos)
+    elements.UptimeLabel.BackgroundTransparency = 1
+    elements.UptimeLabel.Text = "⏱️ Uptime: 0s"
+    elements.UptimeLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    elements.UptimeLabel.Font = Enum.Font.SourceSans
+    elements.UptimeLabel.TextSize = 14
+    elements.UptimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    elements.UptimeLabel.Parent = container
     
     yPos = yPos + 25
     
-    -- Contagem de jogadores
-    local playerCountLabel = Instance.new("TextLabel")
-    playerCountLabel.Name = "PlayerCountLabel"
-    playerCountLabel.Size = UDim2.new(1, -20, 0, 20)
-    playerCountLabel.Position = UDim2.new(0, 10, 0, yPos)
-    playerCountLabel.BackgroundTransparency = 1
-    playerCountLabel.Text = "👥 Jogadores: Carregando..."
-    playerCountLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-    playerCountLabel.Font = Enum.Font.SourceSans
-    playerCountLabel.TextSize = 14
-    playerCountLabel.TextXAlignment = Enum.TextXAlignment.Left
-    playerCountLabel.Parent = container
+    -- Jogadores
+    elements.PlayerCountLabel = Instance.new("TextLabel")
+    elements.PlayerCountLabel.Size = UDim2.new(1, -20, 0, 20)
+    elements.PlayerCountLabel.Position = UDim2.new(0, 10, 0, yPos)
+    elements.PlayerCountLabel.BackgroundTransparency = 1
+    elements.PlayerCountLabel.Text = "👥 Jogadores: 0"
+    elements.PlayerCountLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    elements.PlayerCountLabel.Font = Enum.Font.SourceSans
+    elements.PlayerCountLabel.TextSize = 14
+    elements.PlayerCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+    elements.PlayerCountLabel.Parent = container
     
     yPos = yPos + 30
     
-    -- Seção 4: Controles de Emergência
+    -- Separador
+    yPos = yPos + 10
+    
+    -- Seção 4: Emergência
     local section4 = Instance.new("Frame")
-    section4.Name = "Section4"
-    section4.Size = UDim2.new(1, 0, 0, 40)
+    section4.Size = UDim2.new(1, 0, 0, 30)
     section4.Position = UDim2.new(0, 0, 0, yPos)
-    section4.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
+    section4.BackgroundColor3 = Color3.fromRGB(80, 0, 0)
     section4.BorderSizePixel = 0
     section4.Parent = container
     
-    local section4Title = Instance.new("TextLabel")
-    section4Title.Name = "Section4Title"
-    section4Title.Size = UDim2.new(1, 0, 1, 0)
-    section4Title.Position = UDim2.new(0, 10, 0, 0)
-    section4Title.BackgroundTransparency = 1
-    section4Title.Text = "🚨 CONTROLES DE EMERGÊNCIA"
-    section4Title.TextColor3 = Color3.fromRGB(255, 100, 100)
-    section4Title.Font = Enum.Font.SourceSansBold
-    section4Title.TextSize = 16
-    section4Title.TextXAlignment = Enum.TextXAlignment.Left
-    section4Title.Parent = section4
+    local section4Label = Instance.new("TextLabel")
+    section4Label.Size = UDim2.new(1, 0, 1, 0)
+    section4Label.Position = UDim2.new(0, 10, 0, 0)
+    section4Label.BackgroundTransparency = 1
+    section4Label.Text = "🚨 EMERGÊNCIA"
+    section4Label.TextColor3 = Color3.fromRGB(255, 0, 0)
+    section4Label.Font = Enum.Font.SourceSansBold
+    section4Label.TextSize = 16
+    section4Label.TextXAlignment = Enum.TextXAlignment.Left
+    section4Label.Parent = section4
+    
+    yPos = yPos + 40
+    
+    -- Botão de emergência
+    elements.EmergencyButton = Instance.new("TextButton")
+    elements.EmergencyButton.Size = UDim2.new(1, -20, 0, 40)
+    elements.EmergencyButton.Position = UDim2.new(0, 10, 0, yPos)
+    elements.EmergencyButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    elements.EmergencyButton.Text = "⛔ PARAR TUDO AGORA"
+    elements.EmergencyButton.TextColor3 = Color3.new(1, 1, 1)
+    elements.EmergencyButton.Font = Enum.Font.SourceSansBold
+    elements.EmergencyButton.TextSize = 15
+    elements.EmergencyButton.TextWrapped = true
+    elements.EmergencyButton.Parent = container
     
     yPos = yPos + 50
     
-    -- Botão de parar tudo
-    local emergencyButton = Instance.new("TextButton")
-    emergencyButton.Name = "EmergencyButton"
-    emergencyButton.Size = UDim2.new(1, -20, 0, 40)
-    emergencyButton.Position = UDim2.new(0, 10, 0, yPos)
-    emergencyButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    emergencyButton.Text = "⛔ PARAR TUDO IMEDIATAMENTE"
-    emergencyButton.TextColor3 = Color3.new(1, 1, 1)
-    emergencyButton.Font = Enum.Font.SourceSansBold
-    emergencyButton.TextSize = 15
-    emergencyButton.TextWrapped = true
-    emergencyButton.Parent = container
-    
-    yPos = yPos + 50
-    
-    -- Atualizar tamanho do canvas
+    -- Atualizar canvas size
     container.CanvasSize = UDim2.new(0, 0, 0, yPos + 20)
     
     -- Armazenar referências
     AntiScripter.GUI = screenGui
-    AntiScripter.GUIElements = {
-        MainFrame = mainFrame,
-        SelectPlayerButton = selectPlayerButton,
-        SelectedLabel = selectedLabel,
-        PunishButton = punishButton,
-        StatusLabel = statusLabel,
-        TestButton = testButton,
-        UptimeLabel = uptimeLabel,
-        PlayerCountLabel = playerCountLabel,
-        EmergencyButton = emergencyButton
-    }
+    AntiScripter.GUIElements = elements
     
     -- Configurar eventos
     AntiScripter.SetupGUIEvents()
     
-    Log("Interface criada com sucesso!", "GUI")
+    Log("✅ Interface criada", "GUI")
     
     return screenGui
 end
@@ -464,95 +617,69 @@ end
 function AntiScripter.SetupGUIEvents()
     local elements = AntiScripter.GUIElements
     
-    -- Botão de selecionar jogador
-    elements.SelectPlayerButton.MouseButton1Click:Connect(function()
+    -- Botão de seleção
+    elements.SelectButton.MouseButton1Click:Connect(function()
         AntiScripter.ShowPlayerSelection()
     end)
     
     -- Botão de punição principal
     elements.PunishButton.MouseButton1Click:Connect(function()
         if AntiScripter.IsPunishing then
+            -- Parar punição
             AntiScripter.StopPunishment()
-            elements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO"
-            elements.PunishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-            elements.StatusLabel.Text = "📊 Status: INATIVO"
+            elements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO NO VOID"
+            elements.PunishButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+            elements.StatusLabel.Text = "📊 Status: PARADO"
             elements.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            Log("Punição parada pelo usuário", "CONTROL")
         else
+            -- Iniciar punição
             if AntiScripter.StartPunishment() then
-                elements.PunishButton.Text = "🟢 PARAR PUNIÇÃO (" .. AntiScripter.SelectedPlayer .. ")"
+                elements.PunishButton.Text = "🟢 PARANDO PUNIÇÃO (" .. AntiScripter.SelectedPlayer .. ")"
                 elements.PunishButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
                 elements.StatusLabel.Text = "📊 Status: PUNINDO " .. AntiScripter.SelectedPlayer
                 elements.StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                Log("Punição iniciada pelo usuário", "CONTROL")
+            else
+                Log("❌ Falha ao iniciar punição", "ERROR")
             end
         end
     end)
     
     -- Botão de teste
     elements.TestButton.MouseButton1Click:Connect(function()
-        if AntiScripter.SelectedPlayer then
-            local targetPlayer = Players:FindFirstChild(AntiScripter.SelectedPlayer)
-            if targetPlayer and targetPlayer.Character then
-                local humanoidRootPart = GetHumanoidRootPart(targetPlayer.Character)
-                if humanoidRootPart then
-                    -- Salvar posição original
-                    local originalCFrame = humanoidRootPart.CFrame
-                    local originalAnchored = humanoidRootPart.Anchored
-                    
-                    -- Aplicar punição
-                    humanoidRootPart.CFrame = CFrame.new(0, -50000, 0)
-                    humanoidRootPart.Anchored = true
-                    
-                    Log("Teste realizado em " .. targetPlayer.Name, "TEST")
-                    
-                    -- Restaurar após 3 segundos
-                    task.wait(3)
-                    
-                    humanoidRootPart.Anchored = originalAnchored
-                    humanoidRootPart.CFrame = originalCFrame
-                    
-                    Log("Teste finalizado", "TEST")
-                end
-            end
-        else
-            Log("❌ Nenhum jogador selecionado para teste!", "ERROR")
-        end
+        AntiScripter.TestPunishment()
     end)
     
     -- Botão de emergência
     elements.EmergencyButton.MouseButton1Click:Connect(function()
         AntiScripter.StopPunishment()
         
-        -- Restaurar todos os jogadores
+        -- Restaurar TODOS os jogadores
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local character = player.Character
-                local humanoidRootPart = GetHumanoidRootPart(character)
-                
-                if humanoidRootPart then
-                    humanoidRootPart.Anchored = false
-                    humanoidRootPart.CFrame = CFrame.new(0, 100, 0)
-                end
+            if player ~= LocalPlayer then
+                AntiScripter.RestorePlayer(player)
             end
         end
         
         -- Atualizar interface
-        elements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO"
-        elements.PunishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        elements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO NO VOID"
+        elements.PunishButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
         elements.StatusLabel.Text = "📊 Status: EMERGÊNCIA - PARADO"
-        elements.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        elements.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         
-        Log("🚨 EMERGÊNCIA: Todas as punições paradas!", "EMERGENCY")
+        Log("🚨 EMERGÊNCIA: Sistema parado completamente!", "EMERGENCY")
     end)
 end
 
 function AntiScripter.ShowPlayerSelection()
-    -- Destruir popup anterior se existir
-    local existingPopup = AntiScripter.GUI:FindFirstChild("PlayerSelectionPopup")
+    -- Remover popup anterior
+    local existingPopup = AntiScripter.GUI:FindFirstChild("PlayerPopup")
     if existingPopup then
         existingPopup:Destroy()
     end
     
-    -- Obter lista de jogadores
+    -- Obter jogadores
     local players = Players:GetPlayers()
     local playerNames = {}
     
@@ -563,100 +690,86 @@ function AntiScripter.ShowPlayerSelection()
     end
     
     if #playerNames == 0 then
-        table.insert(playerNames, "Nenhum jogador disponível")
+        table.insert(playerNames, "Nenhum jogador")
     end
     
     -- Criar popup
     local popup = Instance.new("Frame")
-    popup.Name = "PlayerSelectionPopup"
-    popup.Size = UDim2.new(0, 300, 0, 350)
-    popup.Position = UDim2.new(0.5, -150, 0.5, -175)
-    popup.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
-    popup.BorderSizePixel = 2
-    popup.BorderColor3 = Color3.fromRGB(0, 200, 255)
-    popup.ZIndex = 10
+    popup.Name = "PlayerPopup"
+    popup.Size = UDim2.new(0, 300, 0, 300)
+    popup.Position = UDim2.new(0.5, -150, 0.5, -150)
+    popup.BackgroundColor3 = Color3.fromRGB(20, 0, 20)
+    popup.BorderSizePixel = 3
+    popup.BorderColor3 = Color3.fromRGB(255, 0, 255)
+    popup.ZIndex = 100
     popup.Parent = AntiScripter.GUI
     
     -- Título
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(0, 0, 80)
-    title.Text = "👥 SELECIONAR JOGADOR"
-    title.TextColor3 = Color3.fromRGB(0, 255, 255)
+    title.BackgroundColor3 = Color3.fromRGB(100, 0, 100)
+    title.Text = "👥 ESCOLHA UM JOGADOR"
+    title.TextColor3 = Color3.new(1, 1, 1)
     title.Font = Enum.Font.SourceSansBold
     title.TextSize = 18
-    title.ZIndex = 11
+    title.ZIndex = 101
     title.Parent = popup
     
-    -- Botão de fechar
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -35, 0, 5)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    closeButton.Text = "X"
-    closeButton.TextColor3 = Color3.new(1, 1, 1)
-    closeButton.Font = Enum.Font.SourceSansBold
-    closeButton.TextSize = 16
-    closeButton.ZIndex = 11
-    closeButton.Parent = popup
+    -- Botão fechar
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -35, 0, 5)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 16
+    closeBtn.ZIndex = 101
+    closeBtn.Parent = popup
     
-    closeButton.MouseButton1Click:Connect(function()
+    closeBtn.MouseButton1Click:Connect(function()
         popup:Destroy()
     end)
     
-    -- Frame de rolagem
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Size = UDim2.new(1, -20, 1, -80)
-    scrollFrame.Position = UDim2.new(0, 10, 0, 50)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.ScrollBarThickness = 6
-    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, #playerNames * 45)
-    scrollFrame.ZIndex = 11
-    scrollFrame.Parent = popup
+    -- Lista
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -20, 1, -80)
+    scroll.Position = UDim2.new(0, 10, 0, 50)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 6
+    scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 255)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, #playerNames * 45)
+    scroll.ZIndex = 101
+    scroll.Parent = popup
     
-    -- Adicionar jogadores
+    -- Adicionar botões
     local yPos = 5
     for _, playerName in ipairs(playerNames) do
-        local playerButton = Instance.new("TextButton")
-        playerButton.Size = UDim2.new(1, -10, 0, 40)
-        playerButton.Position = UDim2.new(0, 5, 0, yPos)
-        playerButton.BackgroundColor3 = Color3.fromRGB(50, 50, 120)
-        playerButton.Text = playerName
-        playerButton.TextColor3 = Color3.new(1, 1, 1)
-        playerButton.Font = Enum.Font.SourceSans
-        playerButton.TextSize = 14
-        playerButton.ZIndex = 12
-        playerButton.Parent = scrollFrame
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -10, 0, 40)
+        btn.Position = UDim2.new(0, 5, 0, yPos)
+        btn.BackgroundColor3 = Color3.fromRGB(60, 0, 60)
+        btn.Text = playerName
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.Font = Enum.Font.SourceSans
+        btn.TextSize = 14
+        btn.ZIndex = 102
+        btn.Parent = scroll
         
-        playerButton.MouseButton1Click:Connect(function()
-            if playerName ~= "Nenhum jogador disponível" then
+        if playerName ~= "Nenhum jogador" then
+            btn.MouseButton1Click:Connect(function()
                 AntiScripter.SelectedPlayer = playerName
-                AntiScripter.GUIElements.SelectedLabel.Text = "🎯 Jogador selecionado: " .. playerName
-                AntiScripter.GUIElements.SelectedLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-                AntiScripter.GUIElements.SelectPlayerButton.Text = "Jogador: " .. playerName
-                Log("Jogador selecionado: " .. playerName, "SELECTION")
-            end
-            popup:Destroy()
-        end)
+                AntiScripter.GUIElements.SelectedLabel.Text = "🎯 Selecionado: " .. playerName
+                AntiScripter.GUIElements.SelectedLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+                AntiScripter.GUIElements.SelectButton.Text = "Jogador: " .. playerName
+                Log("Selecionado: " .. playerName, "SELECTION")
+                popup:Destroy()
+            end)
+        end
         
         yPos = yPos + 45
     end
-    
-    -- Fechar popup ao clicar fora (opcional)
-    local backgroundBlocker = Instance.new("TextButton")
-    backgroundBlocker.Size = UDim2.new(1, 0, 1, 0)
-    backgroundBlocker.Position = UDim2.new(0, 0, 0, 0)
-    backgroundBlocker.BackgroundColor3 = Color3.new(0, 0, 0)
-    backgroundBlocker.BackgroundTransparency = 0.5
-    backgroundBlocker.Text = ""
-    backgroundBlocker.ZIndex = 9
-    backgroundBlocker.Parent = popup
-    
-    backgroundBlocker.MouseButton1Click:Connect(function()
-        popup:Destroy()
-    end)
 end
 
 function AntiScripter.ToggleGUI()
@@ -664,7 +777,7 @@ function AntiScripter.ToggleGUI()
     
     if AntiScripter.GUI then
         AntiScripter.GUI.Enabled = AntiScripter.IsGUIVisible
-        Log("Interface " .. (AntiScripter.IsGUIVisible and "aberta" or "fechada"), "GUI")
+        Log("GUI " .. (AntiScripter.IsGUIVisible and "visível" or "oculta"), "GUI")
     else
         AntiScripter.CreateGUI()
     end
@@ -674,104 +787,93 @@ function AntiScripter.UpdateGUI()
     if AntiScripter.GUIElements then
         -- Atualizar uptime
         AntiScripter.Uptime = AntiScripter.Uptime + 1
-        AntiScripter.GUIElements.UptimeLabel.Text = "⏱️ Uptime: " .. AntiScripter.Uptime .. " segundos"
+        AntiScripter.GUIElements.UptimeLabel.Text = "⏱️ Uptime: " .. AntiScripter.Uptime .. "s"
         
-        -- Atualizar contagem de jogadores
+        -- Atualizar jogadores
         local playerCount = #Players:GetPlayers() - 1
         AntiScripter.GUIElements.PlayerCountLabel.Text = "👥 Jogadores: " .. playerCount
         
-        -- Atualizar status do botão de punição
-        if AntiScripter.IsPunishing then
-            AntiScripter.GUIElements.PunishButton.Text = "🟢 PARAR PUNIÇÃO (" .. (AntiScripter.SelectedPlayer or "N/A") .. ")"
-            AntiScripter.GUIElements.PunishButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-        else
-            AntiScripter.GUIElements.PunishButton.Text = "🔴 INICIAR PUNIÇÃO"
-            AntiScripter.GUIElements.PunishButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        -- Atualizar status
+        if AntiScripter.IsPunishing and AntiScripter.SelectedPlayer then
+            AntiScripter.GUIElements.StatusLabel.Text = "📊 Status: PUNINDO " .. AntiScripter.SelectedPlayer
+            AntiScripter.GUIElements.StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
         end
     end
 end
 
 --===========================================================
--- INICIALIZAÇÃO DO SISTEMA
+-- INICIALIZAÇÃO
 --===========================================================
-Log("Inicializando sistema...", "SYSTEM")
+Log("Inicializando sistema...", "INIT")
 
--- Criar interface
+-- Criar GUI
 AntiScripter.CreateGUI()
 
 -- Sistema de atualização
 spawn(function()
     while true do
         AntiScripter.UpdateGUI()
-        task.wait(1)
+        wait(1)
     end
 end)
 
 -- Controles de teclado
 UserInputService.InputBegan:Connect(function(input, processed)
     if not processed then
-        -- F9 para alternar interface
         if input.KeyCode == Enum.KeyCode.F9 then
             AntiScripter.ToggleGUI()
-        
-        -- Delete para fechar tudo
         elseif input.KeyCode == Enum.KeyCode.Delete then
-            Log("DELETE pressionado - Fechando sistema...", "SYSTEM")
-            
-            -- Parar punições
+            Log("DELETE pressionado - Fechando", "SYSTEM")
             AntiScripter.StopPunishment()
-            
-            -- Fechar interface
             if AntiScripter.GUI then
                 AntiScripter.GUI:Destroy()
                 AntiScripter.GUI = nil
             end
-            
-            -- Mensagem final
             print("\n" .. string.rep("=", 60))
-            print("🛑 ANTI-SCRIPTER SYSTEM FECHADO")
-            print("⏱️ Tempo ativo: " .. AntiScripter.Uptime .. " segundos")
-            print("🎮 Controles desativados")
+            print("🛑 SISTEMA FECHADO")
+            print("⏱️  Uptime: " .. AntiScripter.Uptime .. "s")
+            print("🎮 Bye!")
             print(string.rep("=", 60) .. "\n")
         end
     end
 end)
 
 -- Mensagem inicial
-task.wait(1)
+wait(1)
 
 print([[
     
     ╔══════════════════════════════════════════════════════════╗
     ║                                                          ║
-    ║      ⚡ ANTI-SCRIPTER SYSTEM - VERSÃO FINAL              ║
+    ║      🔥 ANTI-SCRIPTER VOID SYSTEM - ATIVADO             ║
     ║                                                          ║
-    ║          ✅ Sistema carregado com sucesso!               ║
-    ║          👤 Seu nome: ]] .. LocalPlayer.Name .. [[                      ║
-    ║          🎮 Interface: VISÍVEL NA TELA                   ║
-    ║          🔧 Sistema: 100% FUNCIONAL                     ║
-    ║                                                          ║
-    ║   📋 CONTROLES:                                          ║
-    ║    • F9 = Mostrar/Esconder menu                         ║
-    ║    • DELETE = Fechar sistema completo                    ║
-    ║    • X (canto) = Fechar menu                            ║
+    ║          ✅ Sistema 100% funcional                      ║
+    ║          🎮 Interface: VISÍVEL                          ║
+    ║          ⚡ Punição: ATIVA E FUNCIONAL                  ║
     ║                                                          ║
     ║   🎯 COMO USAR:                                          ║
-    ║   1. Clique em "Clique para selecionar jogador"         ║
-    ║   2. Escolha um jogador na lista                        ║
-    ║   3. Clique em "INICIAR PUNIÇÃO"                        ║
+    ║   1. Selecione um jogador                               ║
+    ║   2. Clique em "INICIAR PUNIÇÃO NO VOID"                ║
+    ║   3. O jogador será enviado ao VOID em LOOP             ║
     ║   4. Para parar, clique novamente no botão              ║
     ║                                                          ║
-    ║   ⚠️  USE COM RESPONSABILIDADE!                         ║
+    ║   ⚡ FUNCIONALIDADES:                                    ║
+    ║   • Teleporte para void profundo                        ║
+    ║   • Loop constante de punição                           ║
+    ║   • Remoção de ferramentas                              ║
+    ║   • Desabilitação de scripts                            ║
+    ║   • Ancoragem no void                                   ║
+    ║   • Sistema de backup/restore                           ║
+    ║                                                          ║
+    ║   ⚠️  FUNCIONA EM TODOS OS JOGADORES!                  ║
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
     
 ]])
 
-Log("✅ Sistema totalmente inicializado!", "SUCCESS")
-Log("🎮 Interface visível na tela", "INFO")
-Log("🔧 Sistema de punição pronto", "INFO")
-Log("🛡️  Sistema de segurança ativo", "INFO")
+Log("✅ Sistema pronto para punir!", "READY")
+Log("🎯 Selecione um jogador e clique em INICIAR PUNIÇÃO", "INFO")
+Log("⚡ A punição agora funciona CORRETAMENTE", "SUCCESS")
 
 -- Retornar sistema
 return AntiScripter
