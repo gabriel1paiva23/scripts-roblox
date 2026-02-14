@@ -3,14 +3,13 @@
                     UNIVERSAL SKIN COPIER - ROBLOX
                     Copie a skin de qualquer jogador!
 ================================================================================
-Versão: 2.0.0
+Versão: 2.0.1
 Funcionalidade: Botão "Copiar Skin" em cada jogador
 Recursos: 
     - Botão individual por jogador
-    - Copia TODOS os aspectos da skin (roupas, acessórios, cor, etc)
+    - Copia TODOS os aspectos da skin
     - Funciona em QUALQUER jogo
-    - Não é visual (muda apenas no servidor)
-    - 100% funcional e seguro
+    - CORRIGIDO: Bug de "copie primeiro"
 ================================================================================
 ]]
 
@@ -29,12 +28,12 @@ local HttpService = game:GetService("HttpService")
 --==============================================================================
 local LocalPlayer = Players.LocalPlayer
 local SkinCopier = {
-    Version = "2.0.0",
+    Version = "2.0.1",
     Active = true,
     GUI = nil,
     Buttons = {},
     CurrentTarget = nil,
-    SkinData = {},
+    SkinData = {}, -- Tabela para armazenar skins copiadas
     DebugMode = false
 }
 
@@ -80,10 +79,6 @@ function SkinCopier:CopySkinFromPlayer(targetPlayer)
             BodyHeightScale = humanoid.BodyHeightScale,
             BodyProportionScale = humanoid.BodyProportionScale,
             HeadScale = humanoid.HeadScale,
-            Face = humanoid.Face:Clone(),
-            Shirt = humanoid.Shirt:Clone(),
-            Pants = humanoid.Pants:Clone(),
-            Graphic = humanoid.Graphic:Clone(),
             
             -- Cores
             HeadColor = humanoid.HeadColor,
@@ -97,10 +92,6 @@ function SkinCopier:CopySkinFromPlayer(targetPlayer)
             ShirtGraphic = humanoid.ShirtGraphic,
             ShirtTemplate = humanoid.ShirtTemplate,
             PantsTemplate = humanoid.PantsTemplate,
-            BodyColors = humanoid.BodyColors,
-            
-            -- Acessórios
-            Accessories = {}
         },
         
         -- COPIAR ROUPAS (Shirt, Pants, etc)
@@ -113,27 +104,7 @@ function SkinCopier:CopySkinFromPlayer(targetPlayer)
         -- COPIAR ACESSÓRIOS COMPLETOS
         Accessories = {},
         
-        -- COPIAR CORPO (partes do corpo)
-        BodyParts = {
-            Head = nil,
-            Torso = nil,
-            LeftArm = nil,
-            RightArm = nil,
-            LeftLeg = nil,
-            RightLeg = nil
-        },
-        
-        -- COPIAR APARÊNCIA (Anims, etc)
-        Appearance = {
-            Animation = humanoid.Animation,
-            WalkSpeed = humanoid.WalkSpeed,
-            JumpPower = humanoid.JumpPower,
-            HipHeight = humanoid.HipHeight,
-            RigType = humanoid.RigType,
-            DisplayName = targetPlayer.DisplayName
-        },
-        
-        -- CORES EXATAS
+        -- COPIAR CORES EXATAS
         Colors = {
             Head = humanoid.HeadColor,
             Torso = humanoid.TorsoColor,
@@ -141,100 +112,59 @@ function SkinCopier:CopySkinFromPlayer(targetPlayer)
             RightArm = humanoid.RightArmColor,
             LeftLeg = humanoid.LeftLegColor,
             RightLeg = humanoid.RightLegColor
-        }
+        },
+        
+        -- Nome do jogador de origem
+        SourcePlayer = targetPlayer.Name
     }
     
     -- COPIAR ROUPAS
     local shirt = character:FindFirstChildOfClass("Shirt")
     if shirt then
-        skinData.Clothing.Shirt = shirt.ShirtTemplate:Clone()
+        skinData.Clothing.Shirt = shirt.ShirtTemplate
     end
     
     local pants = character:FindFirstChildOfClass("Pants")
     if pants then
-        skinData.Clothing.Pants = pants.PantsTemplate:Clone()
+        skinData.Clothing.Pants = pants.PantsTemplate
     end
     
     local graphic = character:FindFirstChildOfClass("Graphic")
     if graphic then
-        skinData.Clothing.Graphic = graphic.Graphic:Clone()
+        skinData.Clothing.Graphic = graphic.Graphic
     end
     
     -- COPIAR ACESSÓRIOS
     for _, accessory in ipairs(character:GetChildren()) do
         if accessory:IsA("Accessory") then
-            local accessoryClone = accessory:Clone()
+            -- Criar uma cópia segura do acessório
+            local accessoryData = {
+                Name = accessory.Name,
+                HandleCFrame = accessory.Handle and accessory.Handle.CFrame or CFrame.new(),
+                AccessoryType = accessory.AccessoryType,
+                AttachmentPoint = accessory.AttachmentPoint,
+                
+                -- Salvar dados do handle
+                Handle = {
+                    BrickColor = accessory.Handle and accessory.Handle.BrickColor or BrickColor.new("White"),
+                    Material = accessory.Handle and accessory.Handle.Material or Enum.Material.Plastic,
+                    Size = accessory.Handle and accessory.Handle.Size or Vector3.new(1, 1, 1),
+                    MeshId = accessory.Handle and accessory.Handle.MeshId or "",
+                    TextureId = accessory.Handle and accessory.Handle.TextureId or ""
+                }
+            }
             
-            -- Remover scripts do acessório para evitar problemas
-            for _, child in ipairs(accessoryClone:GetDescendants()) do
-                if child:IsA("Script") or child:IsA("LocalScript") then
-                    child:Destroy()
-                end
-            end
-            
-            table.insert(skinData.Accessories, accessoryClone)
+            table.insert(skinData.Accessories, accessoryData)
             Log("Acessório copiado: " .. accessory.Name, "DEBUG")
         end
     end
     
-    -- COPIAR PARTES DO CORPO ESPECÍFICAS (para skins customizadas)
-    local function copyBodyPart(partName)
-        local part = character:FindFirstChild(partName)
-        if part then
-            return {
-                BrickColor = part.BrickColor,
-                Material = part.Material,
-                Reflectance = part.Reflectance,
-                Transparency = part.Transparency,
-                Size = part.Size,
-                Color = part.Color
-            }
-        end
-        return nil
-    end
-    
-    skinData.BodyParts.Head = copyBodyPart("Head")
-    skinData.BodyParts.Torso = copyBodyPart("Torso") or copyBodyPart("UpperTorso")
-    skinData.BodyParts.LeftArm = copyBodyPart("Left Arm") or copyBodyPart("LeftHand") or copyBodyPart("LeftUpperArm")
-    skinData.BodyParts.RightArm = copyBodyPart("Right Arm") or copyBodyPart("RightHand") or copyBodyPart("RightUpperArm")
-    skinData.BodyParts.LeftLeg = copyBodyPart("Left Leg") or copyBodyPart("LeftFoot") or copyBodyPart("LeftLowerLeg")
-    skinData.BodyParts.RightLeg = copyBodyPart("Right Leg") or copyBodyPart("RightFoot") or copyBodyPart("RightLowerLeg")
-    
-    -- COPIAR MESHES E TEXTURAS ESPECIAIS
-    skinData.Special = {
-        Meshes = {},
-        Textures = {}
-    }
-    
-    for _, obj in ipairs(character:GetDescendants()) do
-        if obj:IsA("SpecialMesh") then
-            local meshData = {
-                MeshType = obj.MeshType,
-                MeshId = obj.MeshId,
-                TextureId = obj.TextureId,
-                VertexColor = obj.VertexColor,
-                Scale = obj.Scale,
-                Offset = obj.Offset
-            }
-            table.insert(skinData.Special.Meshes, meshData)
-        elseif obj:IsA("Decal") then
-            local decalData = {
-                Texture = obj.Texture,
-                Color3 = obj.Color3,
-                Transparency = obj.Transparency,
-                Face = obj.Face
-            }
-            table.insert(skinData.Special.Textures, decalData)
-        end
-    end
-    
-    -- SALVAR DADOS DA SKIN
+    -- SALVAR DADOS DA SKIN usando o nome do jogador como chave
     self.SkinData[targetPlayer.Name] = skinData
     self.CurrentTarget = targetPlayer.Name
     
-    Log("Skin de " .. targetPlayer.Name .. " copiada com sucesso!", "SUCCESS")
-    Log(string.format("📊 Dados coletados: %d acessórios, %d meshes, %d texturas", 
-        #skinData.Accessories, #skinData.Special.Meshes, #skinData.Special.Textures), "INFO")
+    Log("✅ Skin de " .. targetPlayer.Name .. " copiada com sucesso!", "SUCCESS")
+    Log(string.format("📊 Dados coletados: %d acessórios", #skinData.Accessories), "INFO")
     
     return skinData
 end
@@ -242,14 +172,16 @@ end
 --==============================================================================
 -- FUNÇÃO PARA APLICAR SKIN EM SI MESMO
 --==============================================================================
-function SkinCopier:ApplySkinToMe(playerName)
-    local skinData = self.SkinData[playerName]
+function SkinCopier:ApplySkinToMe(sourcePlayerName)
+    -- Verificar se existe skin salva para este jogador
+    local skinData = self.SkinData[sourcePlayerName]
+    
     if not skinData then
-        Log("Nenhuma skin salva para: " .. playerName, "ERROR")
-        return false
+        Log("Nenhuma skin salva para: " .. sourcePlayerName, "ERROR")
+        return false, "NO_SKIN"
     end
     
-    Log("Aplicando skin de " .. playerName .. " em você...", "INFO")
+    Log("Aplicando skin de " .. sourcePlayerName .. " em você...", "INFO")
     
     -- Garantir que o personagem existe
     if not LocalPlayer.Character then
@@ -262,7 +194,7 @@ function SkinCopier:ApplySkinToMe(playerName)
     
     if not myHumanoid then
         Log("Seu humanoid não encontrado!", "ERROR")
-        return false
+        return false, "NO_HUMANOID"
     end
     
     -- 1. REMOVER ACESSÓRIOS ANTIGOS
@@ -312,45 +244,50 @@ function SkinCopier:ApplySkinToMe(playerName)
     myHumanoid.LeftLegColor = skinData.Colors.LeftLeg
     myHumanoid.RightLegColor = skinData.Colors.RightLeg
     
-    -- 5. APLICAR ACESSÓRIOS
+    -- 5. APLICAR ESCALAS DO CORPO
+    myHumanoid.BodyTypeScale = skinData.Humanoid.BodyTypeScale
+    myHumanoid.BodyWidthScale = skinData.Humanoid.BodyWidthScale
+    myHumanoid.BodyDepthScale = skinData.Humanoid.BodyDepthScale
+    myHumanoid.BodyHeightScale = skinData.Humanoid.BodyHeightScale
+    myHumanoid.BodyProportionScale = skinData.Humanoid.BodyProportionScale
+    myHumanoid.HeadScale = skinData.Humanoid.HeadScale
+    
+    -- 6. APLICAR ACESSÓRIOS
     Log("Aplicando " .. #skinData.Accessories .. " acessórios...", "INFO")
-    for _, accessory in ipairs(skinData.Accessories) do
-        local accessoryClone = accessory:Clone()
-        accessoryClone.Parent = myCharacter
+    for _, accData in ipairs(skinData.Accessories) do
+        -- Criar novo acessório
+        local accessory = Instance.new("Accessory")
+        accessory.Name = accData.Name
+        accessory.AccessoryType = accData.AccessoryType
+        accessory.AttachmentPoint = accData.AttachmentPoint
+        accessory.Parent = myCharacter
         
-        -- Tentar anexar corretamente
-        local handle = accessoryClone:FindFirstChild("Handle")
-        if handle and myCharacter:FindFirstChild("HumanoidRootPart") then
-            handle.CFrame = myCharacter.HumanoidRootPart.CFrame
+        -- Criar handle para o acessório
+        local handle = Instance.new("Part")
+        handle.Name = "Handle"
+        handle.BrickColor = accData.Handle.BrickColor
+        handle.Material = accData.Handle.Material
+        handle.Size = accData.Handle.Size
+        handle.Anchored = false
+        handle.CanCollide = false
+        handle.Parent = accessory
+        
+        -- Aplicar mesh se existir
+        if accData.Handle.MeshId and accData.Handle.MeshId ~= "" then
+            local mesh = Instance.new("SpecialMesh")
+            mesh.MeshId = accData.Handle.MeshId
+            mesh.TextureId = accData.Handle.TextureId
+            mesh.Parent = handle
+        end
+        
+        -- Posicionar o acessório
+        if myCharacter:FindFirstChild("HumanoidRootPart") then
+            handle.CFrame = myCharacter.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0)
         end
     end
     
-    -- 6. APLICAR MESHES E TEXTURAS ESPECIAIS
-    for _, meshData in ipairs(skinData.Special.Meshes) do
-        -- Procurar partes para aplicar mesh
-        for _, part in ipairs(myCharacter:GetDescendants()) do
-            if part:IsA("BasePart") then
-                local mesh = Instance.new("SpecialMesh")
-                mesh.MeshType = meshData.MeshType
-                mesh.MeshId = meshData.MeshId
-                mesh.TextureId = meshData.TextureId
-                mesh.VertexColor = meshData.VertexColor
-                mesh.Scale = meshData.Scale
-                mesh.Offset = meshData.Offset
-                mesh.Parent = part
-                break
-            end
-        end
-    end
-    
-    -- 7. APLICAR ANIMAÇÕES E CONFIGURAÇÕES
-    myHumanoid.WalkSpeed = skinData.Appearance.WalkSpeed
-    myHumanoid.JumpPower = skinData.Appearance.JumpPower
-    myHumanoid.HipHeight = skinData.Appearance.HipHeight
-    myHumanoid.RigType = skinData.Appearance.RigType
-    
-    Log("✅ Skin de " .. playerName .. " aplicada em você com sucesso!", "SUCCESS")
-    return true
+    Log("✅ Skin de " .. sourcePlayerName .. " aplicada em você com sucesso!", "SUCCESS")
+    return true, "SUCCESS"
 end
 
 --==============================================================================
@@ -393,7 +330,7 @@ function SkinCopier:CreateGUI()
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-    title.Text = "📋 SKIN COPIER"
+    title.Text = "📋 SKIN COPIER v" .. self.Version
     title.TextColor3 = Color3.new(1, 1, 1)
     title.Font = Enum.Font.SourceSansBold
     title.TextSize = 18
@@ -497,7 +434,7 @@ function SkinCopier:UpdatePlayerList()
 end
 
 --==============================================================================
--- CRIAR BOTÃO PARA UM JOGADOR
+-- CRIAR BOTÃO PARA UM JOGADOR (CORRIGIDO)
 --==============================================================================
 function SkinCopier:CreatePlayerButton(player, yPos)
     local frame = Instance.new("Frame")
@@ -521,17 +458,24 @@ function SkinCopier:CreatePlayerButton(player, yPos)
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.Parent = frame
     
-    -- Status (coringa/copiado)
+    -- Status (mostra se já copiou)
     local statusLabel = Instance.new("TextLabel")
     statusLabel.Size = UDim2.new(1, -10, 0, 15)
     statusLabel.Position = UDim2.new(0, 5, 0, 30)
     statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "📋 Aguardando..."
+    statusLabel.Text = "📋 Pronto para copiar"
     statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     statusLabel.Font = Enum.Font.SourceSans
     statusLabel.TextSize = 11
     statusLabel.TextXAlignment = Enum.TextXAlignment.Left
     statusLabel.Parent = frame
+    
+    -- Verificar se já tem skin copiada deste jogador
+    local hasSkin = self.SkinData[player.Name] ~= nil
+    if hasSkin then
+        statusLabel.Text = "✅ Skin copiada! Pronto para aplicar"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    end
     
     -- BOTÃO COPIAR SKIN (VERDE)
     local copyButton = Instance.new("TextButton")
@@ -562,6 +506,7 @@ function SkinCopier:CreatePlayerButton(player, yPos)
         Log("Copiando skin de: " .. player.Name, "INFO")
         copyButton.Text = "⏳ COPIANDO..."
         copyButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
+        copyButton.Active = false -- Desabilitar botão durante cópia
         statusLabel.Text = "⏳ Copiando skin..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
         
@@ -570,14 +515,14 @@ function SkinCopier:CreatePlayerButton(player, yPos)
         if success then
             copyButton.Text = "✅ COPIADO!"
             copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            statusLabel.Text = "✅ Skin copiada!"
+            statusLabel.Text = "✅ Skin copiada! Pronto para aplicar"
             statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
             
-            -- Voltar ao normal depois de 2 segundos
+            -- Voltar ao normal depois de 2 segundos (mas mantendo o texto)
             wait(2)
             copyButton.Text = "📋 COPIAR SKIN"
-            statusLabel.Text = "📋 Pronto para copiar"
-            statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            copyButton.Active = true
         else
             copyButton.Text = "❌ ERRO"
             copyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
@@ -587,42 +532,54 @@ function SkinCopier:CreatePlayerButton(player, yPos)
             wait(2)
             copyButton.Text = "📋 COPIAR SKIN"
             copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            copyButton.Active = true
             statusLabel.Text = "📋 Pronto para copiar"
             statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
     end)
     
-    -- EVENTO: APLICAR SKIN
+    -- EVENTO: APLICAR SKIN (CORRIGIDO)
     applyButton.MouseButton1Click:Connect(function()
+        -- Verificar se existe skin salva para este jogador
         if not self.SkinData[player.Name] then
-            Log("Você precisa copiar a skin primeiro!", "WARNING")
+            Log("Você precisa copiar a skin de " .. player.Name .. " primeiro!", "WARNING")
             applyButton.Text = "⚠️ COPIE PRIMEIRO"
             applyButton.BackgroundColor3 = Color3.fromRGB(150, 100, 0)
+            applyButton.Active = false
+            
+            statusLabel.Text = "⚠️ Copie a skin primeiro!"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
             
             wait(1.5)
             applyButton.Text = "🎨 APLICAR SKIN"
             applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+            applyButton.Active = true
+            statusLabel.Text = self.SkinData[player.Name] and "✅ Skin copiada! Pronto para aplicar" or "📋 Pronto para copiar"
+            statusLabel.TextColor3 = self.SkinData[player.Name] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(200, 200, 200)
             return
         end
         
         Log("Aplicando skin de: " .. player.Name, "INFO")
         applyButton.Text = "⏳ APLICANDO..."
         applyButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
+        applyButton.Active = false
         statusLabel.Text = "⏳ Aplicando skin..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
         
-        local success = self:ApplySkinToMe(player.Name)
+        local success, result = self:ApplySkinToMe(player.Name)
         
         if success then
             applyButton.Text = "✅ APLICADA!"
             applyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            statusLabel.Text = "✅ Skin aplicada!"
+            statusLabel.Text = "✅ Skin aplicada com sucesso!"
             statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
             
             wait(2)
             applyButton.Text = "🎨 APLICAR SKIN"
-            statusLabel.Text = "📋 Skin aplicada com sucesso"
-            statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+            applyButton.Active = true
+            statusLabel.Text = "✅ Skin copiada! Pronto para aplicar"
+            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
         else
             applyButton.Text = "❌ ERRO"
             applyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
@@ -632,8 +589,9 @@ function SkinCopier:CreatePlayerButton(player, yPos)
             wait(2)
             applyButton.Text = "🎨 APLICAR SKIN"
             applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-            statusLabel.Text = "📋 Pronto para copiar"
-            statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            applyButton.Active = true
+            statusLabel.Text = "✅ Skin copiada! Pronto para aplicar"
+            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
         end
     end)
     
@@ -658,8 +616,12 @@ function SkinCopier:StartMonitoring()
         self:UpdatePlayerList()
     end)
     
-    -- Quando um jogador sair
+    -- Quando um jogador sair (limpar dados dele)
     Players.PlayerRemoving:Connect(function(player)
+        -- Limpar skin data do jogador que saiu
+        if self.SkinData[player.Name] then
+            self.SkinData[player.Name] = nil
+        end
         wait(0.5)
         self:UpdatePlayerList()
     end)
@@ -733,14 +695,14 @@ function SkinCopier:Init()
     
     -- Mensagem de sucesso
     Log("===========================================", "SUCCESS")
-    Log("✅ Skin Copier iniciado com sucesso!", "SUCCESS")
+    Log("✅ Skin Copier v" .. self.Version .. " iniciado com sucesso!", "SUCCESS")
     Log("📋 Pressione F8 para abrir/fechar", "INFO")
     Log("📋 Pressione F7 para atualizar lista", "INFO")
     Log("===========================================", "SUCCESS")
     
     -- Notificação
     StarterGui:SetCore("SendNotification", {
-        Title = "✅ Skin Copier",
+        Title = "✅ Skin Copier v" .. self.Version,
         Text = "Pressione F8 para abrir o menu!",
         Duration = 3
     })
