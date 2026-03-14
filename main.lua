@@ -1,674 +1,452 @@
 --[[
-================================================================================
-                    UNIVERSAL SKIN COPIER - ROBLOX
-                    Copie a skin de qualquer jogador!
-================================================================================
-Versão: 3.0.0
-Funcionalidade: Botão "Copiar Skin" em cada jogador
-Recursos: 
-    - Botão individual por jogador
-    - Copia TODOS os aspectos da skin
-    - Funciona em QUALQUER jogo
-    - CORRIGIDO: Skin aparece para todos
-================================================================================
+    Script de Teleporte com 6 Pontos e Loop (SEM LIMITES)
+    Criado para Xeno - Agora com 6 loops simultâneos!
 ]]
 
---==============================================================================
--- SERVIÇOS
---==============================================================================
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local HttpService = game:GetService("HttpService")
+-- Criando a interface
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local CloseBtn = Instance.new("TextButton")
 
---==============================================================================
--- VARIÁVEIS PRINCIPAIS
---==============================================================================
-local LocalPlayer = Players.LocalPlayer
-local SkinCopier = {
-    Version = "3.0.0",
-    Active = true,
-    GUI = nil,
-    Buttons = {},
-    SkinData = {},
-}
+-- Criando arrays para os pontos
+local pointButtons = {}
+local pointStatus = {}
+local teleportPoints = {} -- Array para armazenar os 6 pontos
 
---==============================================================================
--- FUNÇÕES DE LOG
---==============================================================================
-local function Log(message, type)
-    local prefix = "📋 "
-    if type == "SUCCESS" then prefix = "✅ "
-    elseif type == "ERROR" then prefix = "❌ "
-    elseif type == "WARNING" then prefix = "⚠️ "
-    end
-    print(prefix .. "[SkinCopier] " .. message)
-end
+-- Controle de loops
+local loopStatus = {} -- Status do loop para cada ponto
+local loopCoroutines = {} -- Armazenar as coroutines para controle
 
---==============================================================================
--- FUNÇÃO PARA COPIAR CARACTERÍSTICAS DO JOGADOR (MÉTODO QUE FUNCIONA EM TODOS OS JOGOS)
---==============================================================================
-function SkinCopier:CopyPlayerAppearance(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then
-        Log("Jogador ou personagem inválido!", "ERROR")
-        return false
-    end
-    
-    Log("Copiando aparência de: " .. targetPlayer.Name, "INFO")
-    
-    local character = targetPlayer.Character
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    
-    if not humanoid then
-        Log("Humanoid não encontrado!", "ERROR")
-        return false
-    end
-    
-    -- MÉTODO 1: Capturar propriedades do humanoid
-    local appearanceData = {
-        -- Cores do corpo (funciona em 100% dos jogos)
-        HeadColor = humanoid.HeadColor,
-        TorsoColor = humanoid.TorsoColor,
-        LeftArmColor = humanoid.LeftArmColor,
-        RightArmColor = humanoid.RightArmColor,
-        LeftLegColor = humanoid.LeftLegColor,
-        RightLegColor = humanoid.RightLegColor,
-        
-        -- Escalas do corpo
-        BodyTypeScale = humanoid.BodyTypeScale,
-        BodyWidthScale = humanoid.BodyWidthScale,
-        BodyDepthScale = humanoid.BodyDepthScale,
-        BodyHeightScale = humanoid.BodyHeightScale,
-        BodyProportionScale = humanoid.BodyProportionScale,
-        HeadScale = humanoid.HeadScale,
-        
-        -- Roupas (IDs)
-        ShirtTemplate = nil,
-        PantsTemplate = nil,
-        GraphicTemplate = nil,
-        
-        -- Acessórios (guardar os handles)
-        Accessories = {},
-        
-        -- Características físicas
-        BodyColors = {},
-        SourcePlayer = targetPlayer.Name
+-- Configurando a GUI
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "TeleportScript6PontosLoop"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+-- Frame principal
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.BorderSizePixel = 0
+Frame.Position = UDim2.new(0.5, -250, 0.5, -250)
+Frame.Size = UDim2.new(0, 500, 0, 500)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Selectable = true
+
+-- Título
+Title.Parent = Frame
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "🚀 TELEPORTE MANAGER - 6 PONTOS (SEM LIMITE DE LOOPS)"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 13
+
+-- Função para criar botões de ponto
+local function criarBotoesPonto()
+    local cores = {
+        Color3.fromRGB(255, 70, 70),    -- Vermelho
+        Color3.fromRGB(70, 255, 70),    -- Verde
+        Color3.fromRGB(70, 70, 255),    -- Azul
+        Color3.fromRGB(255, 255, 70),   -- Amarelo
+        Color3.fromRGB(255, 70, 255),   -- Rosa
+        Color3.fromRGB(70, 255, 255)    -- Ciano
     }
     
-    -- Capturar roupas
-    local shirt = character:FindFirstChildOfClass("Shirt")
-    if shirt then
-        appearanceData.ShirtTemplate = shirt.ShirtTemplate
+    -- Configuração do grid (2 colunas, 3 linhas)
+    for i = 1, 6 do
+        local linha = math.floor((i - 1) / 2)
+        local coluna = (i - 1) % 2
+        
+        -- Frame para o ponto
+        local pointFrame = Instance.new("Frame")
+        pointFrame.Parent = Frame
+        pointFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        pointFrame.BorderSizePixel = 0
+        pointFrame.Position = UDim2.new(0.03 + (coluna * 0.485), 0, 0.1 + (linha * 0.27), 0)
+        pointFrame.Size = UDim2.new(0.47, 0, 0.25, 0)
+        pointFrame.ClipsDescendants = true
+        
+        -- Título do ponto
+        local pointTitle = Instance.new("TextLabel")
+        pointTitle.Parent = pointFrame
+        pointTitle.BackgroundColor3 = cores[i]
+        pointTitle.Size = UDim2.new(1, 0, 0, 20)
+        pointTitle.Font = Enum.Font.GothamBold
+        pointTitle.Text = "PONTO " .. i
+        pointTitle.TextColor3 = Color3.fromRGB(0, 0, 0)
+        pointTitle.TextSize = 12
+        
+        -- Botão DEFINIR PONTO
+        local setBtn = Instance.new("TextButton")
+        setBtn.Parent = pointFrame
+        setBtn.BackgroundColor3 = cores[i]
+        setBtn.Position = UDim2.new(0.05, 0, 0.25, 0)
+        setBtn.Size = UDim2.new(0.4, 0, 0, 20)
+        setBtn.Font = Enum.Font.Gotham
+        setBtn.Text = "DEFINIR"
+        setBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        setBtn.TextSize = 9
+        setBtn.TextScaled = true
+        
+        -- Botão TP
+        local tpBtn = Instance.new("TextButton")
+        tpBtn.Parent = pointFrame
+        tpBtn.BackgroundColor3 = cores[i]
+        tpBtn.Position = UDim2.new(0.55, 0, 0.25, 0)
+        tpBtn.Size = UDim2.new(0.4, 0, 0, 20)
+        tpBtn.Font = Enum.Font.Gotham
+        tpBtn.Text = "TP"
+        tpBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        tpBtn.TextSize = 10
+        tpBtn.TextScaled = true
+        
+        -- Botão LOOP
+        local loopBtn = Instance.new("TextButton")
+        loopBtn.Parent = pointFrame
+        loopBtn.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+        loopBtn.Position = UDim2.new(0.3, 0, 0.5, 0)
+        loopBtn.Size = UDim2.new(0.4, 0, 0, 20)
+        loopBtn.Font = Enum.Font.Gotham
+        loopBtn.Text = "LOOP OFF"
+        loopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        loopBtn.TextSize = 9
+        loopBtn.TextScaled = true
+        
+        -- Status do ponto
+        local status = Instance.new("TextLabel")
+        status.Parent = pointFrame
+        status.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        status.Position = UDim2.new(0.05, 0, 0.75, 0)
+        status.Size = UDim2.new(0.9, 0, 0, 18)
+        status.Font = Enum.Font.Gotham
+        status.Text = "⚫ Não definido"
+        status.TextColor3 = Color3.fromRGB(200, 200, 200)
+        status.TextSize = 8
+        status.TextScaled = true
+        
+        -- Armazenando referências
+        table.insert(pointButtons, {
+            set = setBtn,
+            tp = tpBtn,
+            loop = loopBtn,
+            status = status,
+            index = i,
+            frame = pointFrame,
+            cor = cores[i]
+        })
+        
+        -- Inicializando
+        teleportPoints[i] = nil
+        loopStatus[i] = false
+        loopCoroutines[i] = nil
     end
-    
-    local pants = character:FindFirstChildOfClass("Pants")
-    if pants then
-        appearanceData.PantsTemplate = pants.PantsTemplate
-    end
-    
-    local graphic = character:FindFirstChildOfClass("Graphic")
-    if graphic then
-        appearanceData.GraphicTemplate = graphic.Graphic
-    end
-    
-    -- Capturar acessórios de forma segura
-    for _, accessory in ipairs(character:GetChildren()) do
-        if accessory:IsA("Accessory") and accessory.Handle then
-            local accData = {
-                Name = accessory.Name,
-                AccessoryType = accessory.AccessoryType,
-                HandleCFrame = accessory.Handle.CFrame,
-                HandleSize = accessory.Handle.Size,
-                HandleColor = accessory.Handle.BrickColor,
-                HandleMaterial = accessory.Handle.Material,
-                MeshId = accessory.Handle:FindFirstChildOfClass("SpecialMesh") and accessory.Handle:FindFirstChildOfClass("SpecialMesh").MeshId or "",
-                TextureId = accessory.Handle:FindFirstChildOfClass("SpecialMesh") and accessory.Handle:FindFirstChildOfClass("SpecialMesh").TextureId or ""
-            }
-            table.insert(appearanceData.Accessories, accData)
-        end
-    end
-    
-    -- MÉTODO 2: Capturar BodyColors (funciona em jogos mais antigos)
-    local bodyColors = character:FindFirstChildOfClass("BodyColors")
-    if bodyColors then
-        appearanceData.BodyColors = {
-            HeadColor = bodyColors.HeadColor,
-            TorsoColor = bodyColors.TorsoColor,
-            LeftArmColor = bodyColors.LeftArmColor,
-            RightArmColor = bodyColors.RightArmColor,
-            LeftLegColor = bodyColors.LeftLegColor,
-            RightLegColor = bodyColors.RightLegColor
-        }
-    end
-    
-    -- MÉTODO 3: Capturar características das partes do corpo
-    local parts = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
-    for _, partName in ipairs(parts) do
-        local part = character:FindFirstChild(partName)
-        if part then
-            appearanceData[partName .. "Data"] = {
-                BrickColor = part.BrickColor,
-                Material = part.Material,
-                Size = part.Size,
-                Transparency = part.Transparency,
-                Reflectance = part.Reflectance
-            }
-        end
-    end
-    
-    -- Salvar dados
-    self.SkinData[targetPlayer.Name] = appearanceData
-    
-    Log("✅ Aparência de " .. targetPlayer.Name .. " copiada! (" .. #appearanceData.Accessories .. " acessórios)", "SUCCESS")
-    return true
 end
 
---==============================================================================
--- FUNÇÃO PARA APLICAR APARÊNCIA (MÉTODO QUE FUNCIONA EM TODOS OS JOGOS)
---==============================================================================
-function SkinCopier:ApplyAppearance(sourcePlayerName)
-    local appearance = self.SkinData[sourcePlayerName]
-    if not appearance then
-        Log("Nenhuma aparência salva para: " .. sourcePlayerName, "ERROR")
-        return false
+-- Função para contar loops ativos
+local function contarLoopsAtivos()
+    local count = 0
+    for i = 1, 6 do
+        if loopStatus[i] then
+            count = count + 1
+        end
     end
-    
-    Log("Aplicando aparência de " .. sourcePlayerName .. "...", "INFO")
-    
-    -- Garantir que o personagem existe
-    if not LocalPlayer.Character then
-        LocalPlayer:LoadCharacter()
+    return count
+end
+
+-- Função para atualizar cores dos botões de loop
+local function atualizarCoresLoop()
+    for i = 1, 6 do
+        if loopStatus[i] then
+            pointButtons[i].loop.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Verde quando ativo
+            pointButtons[i].loop.Text = "LOOP ON"
+            pointButtons[i].status.TextColor3 = Color3.fromRGB(0, 255, 255) -- Ciano quando em loop
+        else
+            pointButtons[i].loop.BackgroundColor3 = Color3.fromRGB(150, 150, 150) -- Cinza quando inativo
+            pointButtons[i].loop.Text = "LOOP OFF"
+            if teleportPoints[i] then
+                pointButtons[i].status.TextColor3 = Color3.fromRGB(0, 255, 0) -- Verde quando definido
+            else
+                pointButtons[i].status.TextColor3 = Color3.fromRGB(200, 200, 200) -- Cinza quando não definido
+            end
+        end
+    end
+end
+
+-- Função para definir ponto específico
+local function definirPonto(index)
+    local character = game.Players.LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        teleportPoints[index] = character.HumanoidRootPart.Position
+        local ponto = teleportPoints[index]
+        pointButtons[index].status.Text = string.format("📍 (%.0f,%.0f,%.0f)", ponto.X, ponto.Y, ponto.Z)
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(0, 255, 0)
+        print(string.format("✅ Ponto %d definido em: (%.1f, %.1f, %.1f)", index, ponto.X, ponto.Y, ponto.Z))
+    else
+        pointButtons[index].status.Text = "❌ Erro!"
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(255, 0, 0)
         wait(1)
+        pointButtons[index].status.Text = "⚫ Não definido"
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end
+
+-- Função para teleportar para ponto específico
+local function teleportarParaPonto(index)
+    if teleportPoints[index] then
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            -- Teleport suave
+            character.HumanoidRootPart.CFrame = CFrame.new(teleportPoints[index])
+            -- Feedback visual rápido
+            pointButtons[index].status.TextColor3 = Color3.fromRGB(255, 255, 0)
+            wait(0.05)
+            if loopStatus[index] then
+                pointButtons[index].status.TextColor3 = Color3.fromRGB(0, 255, 255)
+            else
+                pointButtons[index].status.TextColor3 = Color3.fromRGB(0, 255, 0)
+            end
+        end
+    end
+end
+
+-- Função para iniciar loop de teleporte
+local function iniciarLoop(index)
+    if loopCoroutines[index] then
+        -- Se já existe um loop, não criar outro
+        return
     end
     
-    local character = LocalPlayer.Character
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    
-    if not humanoid then
-        Log("Humanoid não encontrado!", "ERROR")
-        return false
-    end
-    
-    -- MÉTODO 1: Aplicar cores diretamente no humanoid (funciona em TODOS os jogos)
-    pcall(function()
-        humanoid.HeadColor = appearance.HeadColor
-        humanoid.TorsoColor = appearance.TorsoColor
-        humanoid.LeftArmColor = appearance.LeftArmColor
-        humanoid.RightArmColor = appearance.RightArmColor
-        humanoid.LeftLegColor = appearance.LeftLegColor
-        humanoid.RightLegColor = appearance.RightLegColor
+    loopCoroutines[index] = coroutine.create(function()
+        while loopStatus[index] and teleportPoints[index] do
+            teleportarParaPonto(index)
+            wait(0.3) -- Intervalo entre teleportes (ajustável)
+        end
+        loopCoroutines[index] = nil
     end)
     
-    -- MÉTODO 2: Aplicar escalas do corpo
-    pcall(function()
-        humanoid.BodyTypeScale = appearance.BodyTypeScale
-        humanoid.BodyWidthScale = appearance.BodyWidthScale
-        humanoid.BodyDepthScale = appearance.BodyDepthScale
-        humanoid.BodyHeightScale = appearance.BodyHeightScale
-        humanoid.BodyProportionScale = appearance.BodyProportionScale
-        humanoid.HeadScale = appearance.HeadScale
-    end)
-    
-    -- MÉTODO 3: Aplicar roupas (se existirem no jogo)
-    if appearance.ShirtTemplate then
-        local shirt = character:FindFirstChildOfClass("Shirt")
-        if not shirt then
-            shirt = Instance.new("Shirt")
-            shirt.Parent = character
-        end
-        shirt.ShirtTemplate = appearance.ShirtTemplate
+    coroutine.resume(loopCoroutines[index])
+end
+
+-- Função para parar loop
+local function pararLoop(index)
+    loopStatus[index] = false
+    if loopCoroutines[index] then
+        loopCoroutines[index] = nil
+    end
+    if teleportPoints[index] then
+        pointButtons[index].status.Text = string.format("📍 (%.0f,%.0f,%.0f)", 
+            teleportPoints[index].X, teleportPoints[index].Y, teleportPoints[index].Z)
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(0, 255, 0)
+    end
+    atualizarCoresLoop()
+end
+
+-- Função para gerenciar loop (SEM LIMITES!)
+local function toggleLoop(index)
+    if not teleportPoints[index] then
+        -- Se o ponto não está definido, avisar
+        pointButtons[index].status.Text = "⚠️ Defina primeiro!"
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(255, 255, 0)
+        wait(0.5)
+        pointButtons[index].status.Text = "⚫ Não definido"
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(200, 200, 200)
+        return
     end
     
-    if appearance.PantsTemplate then
-        local pants = character:FindFirstChildOfClass("Pants")
-        if not pants then
-            pants = Instance.new("Pants")
-            pants.Parent = character
-        end
-        pants.PantsTemplate = appearance.PantsTemplate
-    end
-    
-    if appearance.GraphicTemplate then
-        local graphic = character:FindFirstChildOfClass("Graphic")
-        if not graphic then
-            graphic = Instance.new("Graphic")
-            graphic.Parent = character
-        end
-        graphic.Graphic = appearance.GraphicTemplate
-    end
-    
-    -- MÉTODO 4: Aplicar BodyColors (para jogos mais antigos)
-    if next(appearance.BodyColors) then
-        local bodyColors = character:FindFirstChildOfClass("BodyColors")
-        if not bodyColors then
-            bodyColors = Instance.new("BodyColors")
-            bodyColors.Parent = character
-        end
-        bodyColors.HeadColor = appearance.BodyColors.HeadColor or appearance.HeadColor
-        bodyColors.TorsoColor = appearance.BodyColors.TorsoColor or appearance.TorsoColor
-        bodyColors.LeftArmColor = appearance.BodyColors.LeftArmColor or appearance.LeftArmColor
-        bodyColors.RightArmColor = appearance.BodyColors.RightArmColor or appearance.RightArmColor
-        bodyColors.LeftLegColor = appearance.BodyColors.LeftLegColor or appearance.LeftLegColor
-        bodyColors.RightLegColor = appearance.BodyColors.RightLegColor or appearance.RightLegColor
-    end
-    
-    -- MÉTODO 5: Aplicar características das partes do corpo
-    local parts = {
-        {"Head", "HeadData"},
-        {"Torso", "TorsoData"},
-        {"Left Arm", "Left ArmData"},
-        {"Right Arm", "Right ArmData"},
-        {"Left Leg", "Left LegData"},
-        {"Right Leg", "Right LegData"}
-    }
-    
-    for _, partInfo in ipairs(parts) do
-        local partName = partInfo[1]
-        local dataName = partInfo[2]
-        local partData = appearance[dataName]
+    if loopStatus[index] then
+        -- Desativar loop deste ponto
+        pararLoop(index)
+        print(string.format("⏹️ Loop do ponto %d desativado", index))
+    else
+        -- Ativar loop (SEM VERIFICAÇÃO DE LIMITE!)
+        loopStatus[index] = true
+        pointButtons[index].status.Text = string.format("📍 (%.0f,%.0f,%.0f) - Loop ON 🔄", 
+            teleportPoints[index].X, teleportPoints[index].Y, teleportPoints[index].Z)
+        pointButtons[index].status.TextColor3 = Color3.fromRGB(0, 255, 255)
+        atualizarCoresLoop()
+        print(string.format("🔄 Loop do ponto %d ativado", index))
         
-        if partData then
-            local part = character:FindFirstChild(partName)
-            if part then
-                pcall(function()
-                    part.BrickColor = partData.BrickColor
-                    part.Material = partData.Material
-                    part.Size = partData.Size
-                    part.Transparency = partData.Transparency
-                    part.Reflectance = partData.Reflectance
-                end)
-            end
+        -- Iniciar loop
+        iniciarLoop(index)
+    end
+end
+
+-- Criar os botões
+criarBotoesPonto()
+
+-- Conectar eventos
+for i = 1, 6 do
+    local btnSet = pointButtons[i].set
+    local btnTP = pointButtons[i].tp
+    local btnLoop = pointButtons[i].loop
+    local index = i
+    
+    btnSet.MouseButton1Click:Connect(function()
+        definirPonto(index)
+    end)
+    
+    btnTP.MouseButton1Click:Connect(function()
+        teleportarParaPonto(index)
+    end)
+    
+    btnLoop.MouseButton1Click:Connect(function()
+        toggleLoop(index)
+    end)
+end
+
+-- Frame para controles globais
+local controlFrame = Instance.new("Frame")
+controlFrame.Parent = Frame
+controlFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+controlFrame.BorderSizePixel = 0
+controlFrame.Position = UDim2.new(0.03, 0, 0.85, 0)
+controlFrame.Size = UDim2.new(0.94, 0, 0, 50)
+
+-- Label de status global (agora SEM limite!)
+local globalStatus = Instance.new("TextLabel")
+globalStatus.Parent = controlFrame
+globalStatus.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+globalStatus.Position = UDim2.new(0.02, 0, 0.1, 0)
+globalStatus.Size = UDim2.new(0.96, 0, 0, 25)
+globalStatus.Font = Enum.Font.GothamBold
+globalStatus.Text = "LOOPS ATIVOS: 0/6 (SEM LIMITES)"
+globalStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+globalStatus.TextSize = 11
+
+-- Botão Reset Todos
+local resetBtn = Instance.new("TextButton")
+resetBtn.Parent = controlFrame
+resetBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+resetBtn.Position = UDim2.new(0.02, 0, 0.6, 0)
+resetBtn.Size = UDim2.new(0.3, 0, 0, 25)
+resetBtn.Font = Enum.Font.Gotham
+resetBtn.Text = "RESETAR"
+resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetBtn.TextSize = 10
+
+-- Botão Parar Todos Loops
+local stopLoopsBtn = Instance.new("TextButton")
+stopLoopsBtn.Parent = controlFrame
+stopLoopsBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+stopLoopsBtn.Position = UDim2.new(0.35, 0, 0.6, 0)
+stopLoopsBtn.Size = UDim2.new(0.3, 0, 0, 25)
+stopLoopsBtn.Font = Enum.Font.Gotham
+stopLoopsBtn.Text = "PARAR LOOPS"
+stopLoopsBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+stopLoopsBtn.TextSize = 9
+
+-- Botão Fechar
+CloseBtn.Parent = controlFrame
+CloseBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+CloseBtn.Position = UDim2.new(0.68, 0, 0.6, 0)
+CloseBtn.Size = UDim2.new(0.3, 0, 0, 25)
+CloseBtn.Font = Enum.Font.Gotham
+CloseBtn.Text = "FECHAR"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 10
+
+-- Atualizar status global periodicamente
+spawn(function()
+    while true do
+        local ativos = contarLoopsAtivos()
+        globalStatus.Text = string.format("LOOPS ATIVOS: %d/6 (SEM LIMITES)", ativos)
+        
+        -- Mudar cor baseado na quantidade
+        if ativos == 0 then
+            globalStatus.TextColor3 = Color3.fromRGB(200, 200, 200)
+        elseif ativos <= 3 then
+            globalStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        else
+            globalStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+        wait(0.5)
+    end
+end)
+
+-- Função resetar todos os pontos
+resetBtn.MouseButton1Click:Connect(function()
+    -- Desativar todos os loops primeiro
+    for i = 1, 6 do
+        if loopStatus[i] then
+            pararLoop(i)
         end
     end
     
-    -- MÉTODO 6: Recriar acessórios (a parte mais importante!)
-    -- Primeiro, remover acessórios antigos
-    for _, child in ipairs(character:GetChildren()) do
-        if child:IsA("Accessory") then
-            child:Destroy()
+    for i = 1, 6 do
+        teleportPoints[i] = nil
+        pointButtons[i].status.Text = "⚫ Não definido"
+        pointButtons[i].status.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+    atualizarCoresLoop()
+    print("🗑️ Todos os pontos foram resetados")
+end)
+
+-- Parar todos os loops
+stopLoopsBtn.MouseButton1Click:Connect(function()
+    for i = 1, 6 do
+        if loopStatus[i] then
+            pararLoop(i)
         end
     end
-    
-    -- Recriar acessórios copiados
-    for _, accData in ipairs(appearance.Accessories) do
-        pcall(function()
-            local accessory = Instance.new("Accessory")
-            accessory.Name = accData.Name
-            accessory.AccessoryType = accData.AccessoryType
-            accessory.Parent = character
-            
-            local handle = Instance.new("Part")
-            handle.Name = "Handle"
-            handle.Size = accData.HandleSize
-            handle.BrickColor = accData.HandleColor
-            handle.Material = accData.HandleMaterial
-            handle.Anchored = false
-            handle.CanCollide = false
-            handle.Parent = accessory
-            
-            -- Adicionar mesh se existir
-            if accData.MeshId and accData.MeshId ~= "" then
-                local mesh = Instance.new("SpecialMesh")
-                mesh.MeshId = accData.MeshId
-                mesh.TextureId = accData.TextureId
-                mesh.Parent = handle
-            end
-            
-            -- Posicionar o acessório
-            if character:FindFirstChild("HumanoidRootPart") then
-                handle.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0)
+    print("⏹️ Todos os loops foram parados")
+end)
+
+-- Fechar GUI
+CloseBtn.MouseButton1Click:Connect(function()
+    -- Desativar todos os loops antes de fechar
+    for i = 1, 6 do
+        loopStatus[i] = false
+    end
+    ScreenGui:Destroy()
+end)
+
+-- Função para tornar a janela arrastável
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
         end)
     end
-    
-    -- MÉTODO 7: Forçar atualização do personagem (funciona em muitos jogos)
-    pcall(function()
-        -- Mudar ligeiramente a posição para forçar update
-        if character:FindFirstChild("HumanoidRootPart") then
-            local hrp = character.HumanoidRootPart
-            hrp.CFrame = hrp.CFrame * CFrame.new(0, 0.1, 0)
-            wait(0.1)
-            hrp.CFrame = hrp.CFrame * CFrame.new(0, -0.1, 0)
-        end
-    end)
-    
-    Log("✅ Aparência de " .. sourcePlayerName .. " aplicada com sucesso!", "SUCCESS")
-    return true
-end
-
---==============================================================================
--- CRIAÇÃO DA INTERFACE
---==============================================================================
-function SkinCopier:CreateGUI()
-    Log("Criando interface...", "INFO")
-    
-    if self.GUI then
-        self.GUI:Destroy()
-    end
-    
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "SkinCopierGUI"
-    screenGui.DisplayOrder = 9999
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    
-    self.GUI = screenGui
-    
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 250, 0, 400)
-    mainFrame.Position = UDim2.new(0.02, 0, 0.5, -200)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    mainFrame.BackgroundTransparency = 0.2
-    mainFrame.BorderSizePixel = 2
-    mainFrame.BorderColor3 = Color3.fromRGB(0, 255, 0)
-    mainFrame.Active = true
-    mainFrame.Draggable = true
-    mainFrame.Parent = screenGui
-    
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 0, 40)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-    title.Text = "📋 SKIN COPIER v" .. self.Version
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.Font = Enum.Font.SourceSansBold
-    title.TextSize = 18
-    title.Parent = mainFrame
-    
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Name = "CloseButton"
-    closeBtn.Size = UDim2.new(0, 30, 0, 30)
-    closeBtn.Position = UDim2.new(1, -35, 0, 5)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    closeBtn.Text = "X"
-    closeBtn.TextColor3 = Color3.new(1, 1, 1)
-    closeBtn.Font = Enum.Font.SourceSansBold
-    closeBtn.TextSize = 16
-    closeBtn.Parent = mainFrame
-    
-    closeBtn.MouseButton1Click:Connect(function()
-        screenGui.Enabled = not screenGui.Enabled
-    end)
-    
-    local minimizeBtn = Instance.new("TextButton")
-    minimizeBtn.Name = "MinimizeButton"
-    minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-    minimizeBtn.Position = UDim2.new(1, -70, 0, 5)
-    minimizeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 0)
-    minimizeBtn.Text = "-"
-    minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
-    minimizeBtn.Font = Enum.Font.SourceSansBold
-    minimizeBtn.TextSize = 16
-    minimizeBtn.Parent = mainFrame
-    
-    minimizeBtn.MouseButton1Click:Connect(function()
-        mainFrame.Size = mainFrame.Size == UDim2.new(0, 250, 0, 400) and UDim2.new(0, 250, 0, 40) or UDim2.new(0, 250, 0, 400)
-    end)
-    
-    local container = Instance.new("ScrollingFrame")
-    container.Name = "PlayerList"
-    container.Size = UDim2.new(1, -10, 1, -50)
-    container.Position = UDim2.new(0, 5, 0, 45)
-    container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    container.BackgroundTransparency = 0.5
-    container.ScrollBarThickness = 8
-    container.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 0)
-    container.CanvasSize = UDim2.new(0, 0, 0, 0)
-    container.Parent = mainFrame
-    
-    self.Container = container
-    self:UpdatePlayerList()
-end
-
---==============================================================================
--- ATUALIZAR LISTA DE JOGADORES
---==============================================================================
-function SkinCopier:UpdatePlayerList()
-    if not self.Container then return end
-    
-    for _, child in pairs(self.Container:GetChildren()) do
-        if child:IsA("TextButton") or child:IsA("Frame") then
-            child:Destroy()
-        end
-    end
-    
-    self.Buttons = {}
-    
-    local yPos = 5
-    local players = Players:GetPlayers()
-    
-    for _, player in ipairs(players) do
-        if player ~= LocalPlayer then
-            self:CreatePlayerButton(player, yPos)
-            yPos = yPos + 65
-        end
-    end
-    
-    if yPos == 5 then
-        local noPlayersLabel = Instance.new("TextLabel")
-        noPlayersLabel.Size = UDim2.new(1, -10, 0, 50)
-        noPlayersLabel.Position = UDim2.new(0, 5, 0, 10)
-        noPlayersLabel.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        noPlayersLabel.Text = "❌ Nenhum outro jogador na partida"
-        noPlayersLabel.TextColor3 = Color3.new(1, 1, 1)
-        noPlayersLabel.Font = Enum.Font.SourceSans
-        noPlayersLabel.TextSize = 14
-        noPlayersLabel.TextWrapped = true
-        noPlayersLabel.Parent = self.Container
-        yPos = yPos + 60
-    end
-    
-    self.Container.CanvasSize = UDim2.new(0, 0, 0, yPos + 5)
-end
-
---==============================================================================
--- CRIAR BOTÃO PARA JOGADOR
---==============================================================================
-function SkinCopier:CreatePlayerButton(player, yPos)
-    local frame = Instance.new("Frame")
-    frame.Name = "Player_" .. player.Name
-    frame.Size = UDim2.new(1, -10, 0, 60)
-    frame.Position = UDim2.new(0, 5, 0, yPos)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    frame.BorderSizePixel = 1
-    frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
-    frame.Parent = self.Container
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, -10, 0, 25)
-    nameLabel.Position = UDim2.new(0, 5, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = player.Name
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextSize = 14
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = frame
-    
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(1, -10, 0, 15)
-    statusLabel.Position = UDim2.new(0, 5, 0, 30)
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = self.SkinData[player.Name] and "✅ Copiado" or "📋 Pronto"
-    statusLabel.TextColor3 = self.SkinData[player.Name] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(200, 200, 200)
-    statusLabel.Font = Enum.Font.SourceSans
-    statusLabel.TextSize = 11
-    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    statusLabel.Parent = frame
-    
-    local copyButton = Instance.new("TextButton")
-    copyButton.Name = "CopyButton"
-    copyButton.Size = UDim2.new(0.48, -2, 0, 25)
-    copyButton.Position = UDim2.new(0, 5, 1, -30)
-    copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    copyButton.Text = "📋 COPIAR"
-    copyButton.TextColor3 = Color3.new(1, 1, 1)
-    copyButton.Font = Enum.Font.SourceSansBold
-    copyButton.TextSize = 11
-    copyButton.Parent = frame
-    
-    local applyButton = Instance.new("TextButton")
-    applyButton.Name = "ApplyButton"
-    applyButton.Size = UDim2.new(0.48, -2, 0, 25)
-    applyButton.Position = UDim2.new(0.52, 2, 1, -30)
-    applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-    applyButton.Text = "🎨 APLICAR"
-    applyButton.TextColor3 = Color3.new(1, 1, 1)
-    applyButton.Font = Enum.Font.SourceSansBold
-    applyButton.TextSize = 11
-    applyButton.Parent = frame
-    
-    -- Evento Copiar
-    copyButton.MouseButton1Click:Connect(function()
-        copyButton.Text = "⏳..."
-        copyButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
-        copyButton.Active = false
-        
-        local success = self:CopyPlayerAppearance(player)
-        
-        if success then
-            copyButton.Text = "✅ COPIADO"
-            copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            statusLabel.Text = "✅ Copiado"
-            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            
-            wait(1)
-            copyButton.Text = "📋 COPIAR"
-            copyButton.Active = true
-        else
-            copyButton.Text = "❌ ERRO"
-            copyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-            wait(1)
-            copyButton.Text = "📋 COPIAR"
-            copyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            copyButton.Active = true
-        end
-    end)
-    
-    -- Evento Aplicar
-    applyButton.MouseButton1Click:Connect(function()
-        if not self.SkinData[player.Name] then
-            applyButton.Text = "⚠️ COPIE!"
-            applyButton.BackgroundColor3 = Color3.fromRGB(150, 100, 0)
-            applyButton.Active = false
-            statusLabel.Text = "⚠️ Copie primeiro!"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-            
-            wait(1)
-            applyButton.Text = "🎨 APLICAR"
-            applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-            applyButton.Active = true
-            statusLabel.Text = self.SkinData[player.Name] and "✅ Copiado" or "📋 Pronto"
-            statusLabel.TextColor3 = self.SkinData[player.Name] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(200, 200, 200)
-            return
-        end
-        
-        applyButton.Text = "⏳..."
-        applyButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
-        applyButton.Active = false
-        
-        local success = self:ApplyAppearance(player.Name)
-        
-        if success then
-            applyButton.Text = "✅ APLICADO"
-            applyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            statusLabel.Text = "✅ Aplicado!"
-            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            
-            wait(1.5)
-            applyButton.Text = "🎨 APLICAR"
-            applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-            applyButton.Active = true
-            statusLabel.Text = "✅ Copiado"
-        else
-            applyButton.Text = "❌ ERRO"
-            applyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-            wait(1)
-            applyButton.Text = "🎨 APLICAR"
-            applyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-            applyButton.Active = true
-            statusLabel.Text = "✅ Copiado"
-        end
-    end)
-    
-    self.Buttons[player.Name] = {
-        Frame = frame,
-        CopyButton = copyButton,
-        ApplyButton = applyButton,
-        StatusLabel = statusLabel
-    }
-end
-
---==============================================================================
--- MONITORAMENTO
---==============================================================================
-function SkinCopier:StartMonitoring()
-    Players.PlayerAdded:Connect(function()
-        wait(1)
-        self:UpdatePlayerList()
-    end)
-    
-    Players.PlayerRemoving:Connect(function(player)
-        if self.SkinData[player.Name] then
-            self.SkinData[player.Name] = nil
-        end
-        self:UpdatePlayerList()
-    end)
-    
-    spawn(function()
-        while self.Active do
-            wait(5)
-            if self.GUI and self.GUI.Enabled then
-                self:UpdatePlayerList()
-            end
-        end
-    end)
-end
-
---==============================================================================
--- INICIALIZAÇÃO
---==============================================================================
-function SkinCopier:Init()
-    Log("===========================================", "INFO")
-    Log("Iniciando Universal Skin Copier v" .. self.Version, "INFO")
-    Log("===========================================", "INFO")
-    
-    -- Aguardar jogador
-    while not LocalPlayer or not LocalPlayer.Character do
-        wait(1)
-    end
-    
-    self:CreateGUI()
-    self:StartMonitoring()
-    
-    -- Hotkey F8
-    UserInputService.InputBegan:Connect(function(input, processed)
-        if not processed and input.KeyCode == Enum.KeyCode.F8 and self.GUI then
-            self.GUI.Enabled = not self.GUI.Enabled
-        end
-    end)
-    
-    Log("✅ Skin Copier v" .. self.Version .. " iniciado! Pressione F8", "SUCCESS")
-    
-    StarterGui:SetCore("SendNotification", {
-        Title = "✅ Skin Copier",
-        Text = "Pressione F8 para abrir!",
-        Duration = 3
-    })
-    
-    return true
-end
-
---==============================================================================
--- EXECUTAR
---==============================================================================
-repeat wait() until game:IsLoaded() and Players.LocalPlayer
-
-pcall(function()
-    SkinCopier:Init()
 end)
 
-return SkinCopier
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        Frame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+print([[
+╔══════════════════════════════════════════╗
+║    TELEPORTE MANAGER - 6 PONTOS LOOP     ║
+╠══════════════════════════════════════════╣
+║  🚀 AGORA SEM LIMITE DE LOOPS!           ║
+║  🔄 6 LOOPS SIMULTÂNEOS                   ║
+║  ⚡ Intervalo: 0.3s                        ║
+║  🎯 Todos os pontos podem estar em loop   ║
+╚══════════════════════════════════════════╝
+]])
